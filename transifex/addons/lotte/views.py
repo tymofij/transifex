@@ -66,11 +66,13 @@ def translate(request, project_slug, lang_code, resource_slug=None,
     # Permissions handling
     # Project should always be available
     project = get_object_or_404(Project, slug=project_slug)
+    openup_suggestions = project.openup_suggestions
     team = Team.objects.get_or_none(project, lang_code)
     check = ProjectPermission(request.user)
     if not check.submit_translations(team or project) and not\
         check.maintain(project):
-        return permission_denied(request)
+        if not openup_suggestions:
+            return permission_denied(request)
 
     resources = []
     if resource_slug:
@@ -753,11 +755,15 @@ def push_translation(request, project_slug, lang_code, *args, **kwargs):
     # Permissions handling
     # Project should always be available
     project = get_object_or_404(Project, slug=project_slug)
+    openup_suggestions = project.openup_suggestions
     team = Team.objects.get_or_none(project, lang_code)
     check = ProjectPermission(request.user)
     if not check.submit_translations(team or project) and not\
         check.maintain(project):
-        return permission_denied(request)
+        if not openup_suggestions:
+            return permission_denied(request)
+    else:
+        openup_suggestions = False
 
     if not request.POST:
         return HttpResponseBadRequest()
@@ -826,10 +832,16 @@ def push_translation(request, project_slug, lang_code, *args, **kwargs):
                 # Skip the save as we hit on an error.
                 continue
         try:
-            msgs = _save_translation(
-                source_string, row['translations'],
-                target_language, request.user
-            )
+            if not openup_suggestions:
+                msgs = _save_translation(
+                    source_string, row['translations'],
+                    target_language, request.user
+                )
+            else:
+                msgs = _save_suggestion(
+                    source_string, row['translations'],
+                    target_language, request.user
+                )
             if not msgs:
                 push_response_dict[source_id] = {'status': 200}
             else:
@@ -847,6 +859,8 @@ def push_translation(request, project_slug, lang_code, *args, **kwargs):
             push_response_dict[source_id] = {
                 'status': 400, 'message': e.message
             }
+        if openup_suggestions:
+            push_response_dict[source_id]['suggestion'] = 1
 
     json_dict = simplejson.dumps(push_response_dict)
     return HttpResponse(json_dict, mimetype='application/json')
@@ -1002,10 +1016,14 @@ def tab_suggestions_snippet(request, entity_id, lang_code):
     """Return a template snippet with entity & translation details."""
 
     source_entity = get_object_or_404(SourceEntity, pk=entity_id)
-
+    project = source_entity.resource.project
+    if project.outsource:
+        project = project.outsource
+    openup_suggestions = project.openup_suggestions
     check = ProjectPermission(request.user)
     if not check.private(source_entity.resource.project):
-        return permission_denied(request)
+        if not openup_suggestions:
+            return permission_denied(request)
 
     current_translation = source_entity.get_translation(lang_code)
 
@@ -1149,3 +1167,15 @@ def add_edit_developer_comment_extra(request, project_slug, *args, **kwargs):
                 }
 
     return HttpResponse(simplejson.dumps(content), mimetype='application/json')
+
+def _save_suggestion(translation, suggestions, language, user):
+    source_entity = translation.source_entity
+    msgs = []
+    try:
+        for rule, string in suggestions.items():
+            source_entity.suggestions.create(language=language,
+                                         string=string,
+                                         user=user)
+        msgs.append(_("Suggestion saved successfully."))
+    except Exception, e:
+        msgs.append(_("Error occured during saving a suggestion."))

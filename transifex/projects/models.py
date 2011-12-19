@@ -203,6 +203,10 @@ class Project(models.Model):
         verbose_name=_('Outsource project'), related_name="outsourcing",
         help_text=_('Project hub that owns the access control of this project.'))
 
+    openup_suggestions = models.BooleanField(_("Open up suggestions"),
+            default=False, blank=False,
+            help_text=_("Allow non team members to suggest translations from Lotte."))
+
     owner = models.ForeignKey(User, blank=True, null=True,
         verbose_name=_('Owner'), related_name='projects_owning',
         help_text=_('The user who owns this project.'))

@@ -192,16 +192,18 @@ def project_access_control_edit(request, project_slug):
                 project.anyone_submit = False
 
             # Check if cla form exists before sending the signal
-            if 'limited_access' == access_control and \
-            form.cleaned_data.has_key('cla_license_text'):
-                # send signal to save CLA
-                signals.cla_create.send(
-                    sender='project_access_control_edit_view',
-                    project=project,
-                    license_text=form.cleaned_data['cla_license_text'],
-                    request=request
-                )
-
+            if 'limited_access' == access_control:
+                if access_control_form.cleaned_data.has_key('cla_license_text'):
+                    # send signal to save CLA
+                    signals.cla_create.send(
+                        sender='project_access_control_edit_view',
+                        project=project,
+                        license_text=access_control_form.cleaned_data['cla_license_text'],
+                        request=request
+                    )
+                elif access_control_form.cleaned_data.has_key['openup_suggestions'] and\
+                        access_control_form.cleaned_data['openup_suggestions']:
+                    project.openup_suggestions = True
             project.save()
             form.save_m2m()
             handle_stats_on_access_control_edit(project)
