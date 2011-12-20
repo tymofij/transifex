@@ -272,9 +272,11 @@
                            + '    <li>'
                            + '     <a class="tabs_trigger show_details" href="#">{% trans "details" %}</a>'
                            + '    </li>'
+                           {% if not openup_suggestions %}
                            + '    <li>'
                            + '     <a class="tabs_trigger show_suggestions" href="#">'+(bold_flag?'<strong>':'')+'{% trans "suggestions" %}'+suggestions_num+(bold_flag?'</strong>':'')+'</a>'
-                           + '    </li>';
+                           + '    </li>'
+                           {% endif %};
                            
                     // Must contain something like: tabs += '<li><a>foo</a></li>'
                     {% hook "tab_lotte.html" tab %}

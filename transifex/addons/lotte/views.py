@@ -21,6 +21,7 @@ from django.db import transaction
 from authority.views import permission_denied
 
 from actionlog.models import action_logging
+from transifex.addons.suggestions.models import Suggestion
 from transifex.txcommon.log import logger
 from transifex.languages.models import Language
 from transifex.projects.models import Project
@@ -73,6 +74,8 @@ def translate(request, project_slug, lang_code, resource_slug=None,
         check.maintain(project):
         if not openup_suggestions:
             return permission_denied(request)
+    else:
+        openup_suggestions = False
 
     resources = []
     if resource_slug:
@@ -191,6 +194,7 @@ def translate(request, project_slug, lang_code, resource_slug=None,
         'spellcheck_supported_langs': SPELLCHECK_SUPPORTED_LANGS,
         'team_language': team_language,
         'RTL': rtl,
+        'openup_suggestions': openup_suggestions,
     }, context_instance = RequestContext(request))
 
 @login_required
@@ -323,13 +327,22 @@ def stringset_handling(request, project_slug, lang_code, resource_slug=None,
     # send the extra info.
     check = ProjectPermission(request.user)
     review = check.proofread(project, language)
+    team = Team.objects.get_or_none(project, lang_code)
+    openup_suggestions = False
+
+    if not check.submit_translations(team or project) and not\
+        check.maintain(project):
+        if project.openup_suggestions:
+            openup_suggestions = True
 
     # FIXME Do we need to check for non-POST requests and return an error?
     return _get_stringset(request.POST, resources, language, review=review,
-            session=request.session)
+            session=request.session, user=request.user,
+            openup_suggestions=openup_suggestions)
 
 
-def _get_stringset(post_data, resources, language, review=False, session='', *args, **kwargs):
+def _get_stringset(post_data, resources, language, review=False, session='',
+        user=None, openup_suggestions=False, *args, **kwargs):
     """Return the source strings for the specified resources and language
     based on the filters active in the request.
 
@@ -415,7 +428,8 @@ def _get_stringset(post_data, resources, language, review=False, session='', *ar
                 _get_source_strings(s, source_language, language.code, more_languages),
                 # 4. Get all the Translation strings mapped with plural rules
                 # in a single dictionary (see docstring of function)
-                _get_strings(translated_strings, language, s.source_entity),
+                _get_strings(translated_strings, language, s.source_entity,
+                    user=user, openup_suggestions=openup_suggestions),
                 # 5. A number which indicates the number of Suggestion objects
                 # attached to this row of the table.
                 Suggestion.objects.filter(source_entity=s.source_entity, language__code=language.code).count(),
@@ -722,13 +736,44 @@ def _get_strings(query, target_language, source_entity):
         # Fill with empty strings to have the Untranslated entries!
         for rule in target_language.get_pluralrules():
             translation_strings[rule] = ""
+        if openup_suggestions:
+            suggestion = source_entity.suggestions.filter(user=user)
+            if suggestion:
+                suggestion_string = suggestion[0].string
+            else:
+                suggestion_string = ""
+            pluralrules = target_language.get_pluralrules()
+            for count, rule in enumerate(pluralrules):
+                if rule != "other":
+                    p = suggestion_string.find(pluralrules[count+1]) - 1
+                    string = suggestion_string[:p]
+                    suggestion_string = suggestion_string[p:]
+                else:
+                    string = suggestion_string
+                string = string.lstrip("["+rule+"]:")[1:]
+                if rule != "other":
+                    string = string[:-1]
+                translation_strings[rule] = string
+
+        translations = query.filter(source_entity=source_entity).order_by('rule')
+        # Fill with empty strings to have the Untranslated entries!
         for translation in translations:
             plural_name = target_language.get_rule_name_from_num(translation.rule)
-            translation_strings[plural_name] = translation.string
+            if not (openup_suggestions and translation_strings.has_key(plural_name)\
+                    and translation_strings[plural_name]):
+                translation_strings[plural_name] = translation.string
     else:
         try:
             translation_strings["other"] = query.get(source_entity=source_entity,
                                                      rule=5).string
+            if openup_suggestions:
+                suggestion = source_entity.suggestions.filter(user=user)
+                if suggestion:
+                    translation_strings["other"] = suggestion[0].string
+
+            if not translation_strings["other"]:
+                translation_strings["other"] = query.get(source_entity=source_entity,
+                                                         rule=5).string
         except Translation.DoesNotExist:
             translation_strings["other"] = ""
     return translation_strings
@@ -1171,10 +1216,28 @@ def add_edit_developer_comment_extra(request, project_slug, *args, **kwargs):
 def _save_suggestion(translation, suggestions, language, user):
     source_entity = translation.source_entity
     msgs = []
+    suggestion_string = ""
     try:
-        for rule, string in suggestions.items():
+        if source_entity.pluralized:
+            suggestion_strings = {}
+            for rule, string in suggestions.items():
+                suggestion_strings[language.get_rule_num_from_name(rule)] = string
+
+            for rule in suggestion_strings.keys():
+                suggestion_string += '[' + language.get_rule_name_from_num(rule)+ ']' +\
+                        ": " + suggestion_strings[rule] + "\n"
+            suggestion_string = suggestion_string[:-1]
+        else:
+            for rule, string in suggestions.items():
+                suggestion_string = string
+        try:
+            suggestion = source_entity.suggestions.get(user=user,
+                    language=language)
+            suggestion.string = suggestion_string
+            suggestion.save()
+        except Suggestion.DoesNotExist, e:
             source_entity.suggestions.create(language=language,
-                                         string=string,
+                                         string=suggestion_string,
                                          user=user)
         msgs.append(_("Suggestion saved successfully."))
     except Exception, e:
