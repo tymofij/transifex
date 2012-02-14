@@ -423,15 +423,9 @@ def team_join_approve(request, project_slug, language_code, username):
 	team.save()
 	access_request.delete()
 
-	# ActionLog & Notification
-	# TODO: Use signals
 	nt = 'project_team_join_approved'
-	context = {'access_request': access_request,
-		   'sender': request.user}
-
-	# Logging action
+	context = {'access_request': access_request, 'sender': request.user}
 	action_logging(request.user, [project, team], nt, context=context)
-
 	if settings.ENABLE_NOTICES:
            _team_join_action_notify(access_request, project, team, nt, context)
     except IntegrityError, e:
@@ -463,19 +457,13 @@ def team_join_deny(request, project_slug, language_code, username):
 
     try:
 	access_request.delete()
-	# ActionLog & Notification
-	# TODO: Use signals
 	nt = 'project_team_join_denied'
 	context = {'access_request': access_request,
 		   'performer': request.user,
 		   'sender': request.user}
-
-	# Logging action
 	action_logging(request.user, [project, team], nt, context=context)
-
 	if settings.ENABLE_NOTICES:
            _team_join_action_notify(access_request, project, team, nt, context)
-
     except IntegrityError, e:
 	transaction.rollback()
 	logger.error("Something weird happened: %s" % str(e))
@@ -484,6 +472,10 @@ def team_join_deny(request, project_slug, language_code, username):
                                         args=[project_slug, language_code]))
 
 def _team_join_action_notify(access_request, project, team, nt, context):
+    """
+    Send notifications when a user's request to join a team gets 
+    accepted/rejected
+    """
     # Send notification for those that are observing this project
     txnotification.send_observation_notices_for(project,
 	    signal=nt, extra_context=context)
