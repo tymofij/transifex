@@ -416,8 +416,7 @@ def team_join_approve(request, project_slug, language_code, username):
     access_request = get_object_or_404(TeamAccessRequest, team__pk=team.pk,
         user__pk=user.pk)
 
-    if user in team.members.all() or \
-	user in team.coordinators.all():
+    if user in team.members.all() or user in team.coordinators.all():
 	access_request.delete()
     try:
 	team.members.add(user)
@@ -434,12 +433,7 @@ def team_join_approve(request, project_slug, language_code, username):
 	action_logging(request.user, [project, team], nt, context=context)
 
 	if settings.ENABLE_NOTICES:
-	    # Send notification for those that are observing this project
-	    txnotification.send_observation_notices_for(project,
-		    signal=nt, extra_context=context)
-	    # Send notification for maintainers, coordinators and the user
-	    notification.send(set(itertools.chain(project.maintainers.all(),
-		team.coordinators.all(), [access_request.user])), nt, context)
+           _team_join_action_notify(access_request, project, team, nt, context)
     except IntegrityError, e:
 	transaction.rollback()
 	logger.error("Something weird happened: %s" % str(e))
@@ -480,12 +474,7 @@ def team_join_deny(request, project_slug, language_code, username):
 	action_logging(request.user, [project, team], nt, context=context)
 
 	if settings.ENABLE_NOTICES:
-	    # Send notification for those that are observing this project
-	    txnotification.send_observation_notices_for(project,
-		    signal=nt, extra_context=context)
-	    # Send notification for maintainers, coordinators and the user
-	    notification.send(set(itertools.chain(project.maintainers.all(),
-		team.coordinators.all(), [access_request.user])), nt, context)
+           _team_join_action_notify(access_request, project, team, nt, context)
 
     except IntegrityError, e:
 	transaction.rollback()
@@ -493,6 +482,14 @@ def team_join_deny(request, project_slug, language_code, username):
 
     return HttpResponseRedirect(reverse("team_detail",
                                         args=[project_slug, language_code]))
+
+def _team_join_action_notify(access_request, project, team, nt, context):
+    # Send notification for those that are observing this project
+    txnotification.send_observation_notices_for(project,
+	    signal=nt, extra_context=context)
+    # Send notification for maintainers, coordinators and the user
+    notification.send(set(itertools.chain(project.maintainers.all(),
+	team.coordinators.all(), [access_request.user])), nt, context)
 
 @access_off(team_off)
 @login_required
