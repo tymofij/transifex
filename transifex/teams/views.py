@@ -11,11 +11,13 @@ from django.db import IntegrityError
 from django.db import transaction
 from django.db.models import Q, Sum
 from django.dispatch import Signal
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.http import Http404
 from django.utils.translation import ugettext as _
+
+from django.utils import simplejson
 
 from actionlog.models import action_logging
 from transifex.languages.models import Language
@@ -31,7 +33,6 @@ from transifex.txcommon import notifications as txnotification
 
 from transifex.txcommon.decorators import one_perm_required_or_403, access_off
 from transifex.txcommon.log import logger
-
 
 def team_off(request, project, *args, **kwargs):
     """
@@ -428,12 +429,18 @@ def team_join_approve(request, project_slug, language_code, username):
 	action_logging(request.user, [project, team], nt, context=context)
 	if settings.ENABLE_NOTICES:
            _team_join_action_notify(access_request, project, team, nt, context)
+        success = True
     except IntegrityError, e:
 	transaction.rollback()
 	logger.error("Something weird happened: %s" % str(e))
+        success = False
 
-    return HttpResponseRedirect(reverse("team_detail",
-                                        args=[project_slug, language_code]))
+    response = simplejson.dumps({
+        'user_id': user.id,
+        'success': success,
+        'accepted': True,
+    })
+    return HttpResponse(response)
 
 pr_team_deny_member_perm=(("granular", "project_perm.coordinate_team"),)
 @access_off(team_off)
@@ -464,9 +471,18 @@ def team_join_deny(request, project_slug, language_code, username):
 	action_logging(request.user, [project, team], nt, context=context)
 	if settings.ENABLE_NOTICES:
            _team_join_action_notify(access_request, project, team, nt, context)
+        success = True
     except IntegrityError, e:
 	transaction.rollback()
 	logger.error("Something weird happened: %s" % str(e))
+        success = False
+
+    response = simplejson.dumps({
+        'user_id': user.id,
+        'success': success,
+        'accepted': False,
+    })
+    return HttpResponse(response)
 
     return HttpResponseRedirect(reverse("team_detail",
                                         args=[project_slug, language_code]))
