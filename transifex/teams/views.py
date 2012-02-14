@@ -404,7 +404,6 @@ pr_team_add_member_perm=(("granular", "project_perm.coordinate_team"),)
     (Language, "code__exact", "language_code"))
 @transaction.commit_on_success
 def team_join_approve(request, project_slug, language_code, username):
-
     team = get_object_or_404(Team, project__slug=project_slug,
         language__code=language_code)
     project = team.project
@@ -415,16 +414,10 @@ def team_join_approve(request, project_slug, language_code, username):
     if request.POST:
         if user in team.members.all() or \
             user in team.coordinators.all():
-            messages.warning(request,
-                            _("User '%(user)s' is already on the '%(team)s' team.")
-                            % {'user':user, 'team':team.language.name})
             access_request.delete()
         try:
             team.members.add(user)
             team.save()
-            messages.success(request,
-                            _("You added '%(user)s' to the '%(team)s' team.")
-                            % {'user':user, 'team':team.language.name})
             access_request.delete()
 
             # ActionLog & Notification
@@ -471,11 +464,6 @@ def team_join_deny(request, project_slug, language_code, username):
     if request.POST:
         try:
             access_request.delete()
-            messages.info(request,_(
-                "You rejected the request by user '%(user)s' to join the "
-                "'%(team)s' team."
-                ) % {'user':user, 'team':team.language.name})
-
             # ActionLog & Notification
             # TODO: Use signals
             nt = 'project_team_join_denied'
