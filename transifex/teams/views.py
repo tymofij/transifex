@@ -404,6 +404,11 @@ pr_team_add_member_perm=(("granular", "project_perm.coordinate_team"),)
     (Language, "code__exact", "language_code"))
 @transaction.commit_on_success
 def team_join_approve(request, project_slug, language_code, username):
+    if not request.is_ajax() or request.method != "POST":
+	return HttpResponse>Redirect(reverse("team_detail", 
+	  args=[project_slug, language_code]))
+
+    # we can haz ajax post
     team = get_object_or_404(Team, project__slug=project_slug,
         language__code=language_code)
     project = team.project
@@ -411,39 +416,36 @@ def team_join_approve(request, project_slug, language_code, username):
     access_request = get_object_or_404(TeamAccessRequest, team__pk=team.pk,
         user__pk=user.pk)
 
-    if request.POST:
-        if user in team.members.all() or \
-            user in team.coordinators.all():
-            access_request.delete()
-        try:
-            team.members.add(user)
-            team.save()
-            access_request.delete()
+    if user in team.members.all() or \
+	user in team.coordinators.all():
+	access_request.delete()
+    try:
+	team.members.add(user)
+	team.save()
+	access_request.delete()
 
-            # ActionLog & Notification
-            # TODO: Use signals
-            nt = 'project_team_join_approved'
-            context = {'access_request': access_request,
-                       'sender': request.user}
+	# ActionLog & Notification
+	# TODO: Use signals
+	nt = 'project_team_join_approved'
+	context = {'access_request': access_request,
+		   'sender': request.user}
 
-            # Logging action
-            action_logging(request.user, [project, team], nt, context=context)
+	# Logging action
+	action_logging(request.user, [project, team], nt, context=context)
 
-            if settings.ENABLE_NOTICES:
-                # Send notification for those that are observing this project
-                txnotification.send_observation_notices_for(project,
-                        signal=nt, extra_context=context)
-                # Send notification for maintainers, coordinators and the user
-                notification.send(set(itertools.chain(project.maintainers.all(),
-                    team.coordinators.all(), [access_request.user])), nt, context)
-
-        except IntegrityError, e:
-            transaction.rollback()
-            logger.error("Something weird happened: %s" % str(e))
+	if settings.ENABLE_NOTICES:
+	    # Send notification for those that are observing this project
+	    txnotification.send_observation_notices_for(project,
+		    signal=nt, extra_context=context)
+	    # Send notification for maintainers, coordinators and the user
+	    notification.send(set(itertools.chain(project.maintainers.all(),
+		team.coordinators.all(), [access_request.user])), nt, context)
+    except IntegrityError, e:
+	transaction.rollback()
+	logger.error("Something weird happened: %s" % str(e))
 
     return HttpResponseRedirect(reverse("team_detail",
                                         args=[project_slug, language_code]))
-
 
 pr_team_deny_member_perm=(("granular", "project_perm.coordinate_team"),)
 @access_off(team_off)
@@ -453,7 +455,11 @@ pr_team_deny_member_perm=(("granular", "project_perm.coordinate_team"),)
     (Language, "code__exact", "language_code"))
 @transaction.commit_on_success
 def team_join_deny(request, project_slug, language_code, username):
+    if not request.is_ajax() or request.method != "POST":
+	return HttpResponse>Redirect(reverse("team_detail", 
+	  args=[project_slug, language_code]))
 
+    # we can haz ajax post
     team = get_object_or_404(Team, project__slug=project_slug,
         language__code=language_code)
     project = team.project
@@ -461,30 +467,29 @@ def team_join_deny(request, project_slug, language_code, username):
     access_request = get_object_or_404(TeamAccessRequest, team__pk=team.pk,
         user__pk=user.pk)
 
-    if request.POST:
-        try:
-            access_request.delete()
-            # ActionLog & Notification
-            # TODO: Use signals
-            nt = 'project_team_join_denied'
-            context = {'access_request': access_request,
-                       'performer': request.user,
-                       'sender': request.user}
+    try:
+	access_request.delete()
+	# ActionLog & Notification
+	# TODO: Use signals
+	nt = 'project_team_join_denied'
+	context = {'access_request': access_request,
+		   'performer': request.user,
+		   'sender': request.user}
 
-            # Logging action
-            action_logging(request.user, [project, team], nt, context=context)
+	# Logging action
+	action_logging(request.user, [project, team], nt, context=context)
 
-            if settings.ENABLE_NOTICES:
-                # Send notification for those that are observing this project
-                txnotification.send_observation_notices_for(project,
-                        signal=nt, extra_context=context)
-                # Send notification for maintainers, coordinators and the user
-                notification.send(set(itertools.chain(project.maintainers.all(),
-                    team.coordinators.all(), [access_request.user])), nt, context)
+	if settings.ENABLE_NOTICES:
+	    # Send notification for those that are observing this project
+	    txnotification.send_observation_notices_for(project,
+		    signal=nt, extra_context=context)
+	    # Send notification for maintainers, coordinators and the user
+	    notification.send(set(itertools.chain(project.maintainers.all(),
+		team.coordinators.all(), [access_request.user])), nt, context)
 
-        except IntegrityError, e:
-            transaction.rollback()
-            logger.error("Something weird happened: %s" % str(e))
+    except IntegrityError, e:
+	transaction.rollback()
+	logger.error("Something weird happened: %s" % str(e))
 
     return HttpResponseRedirect(reverse("team_detail",
                                         args=[project_slug, language_code]))
