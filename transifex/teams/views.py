@@ -28,6 +28,7 @@ from transifex.projects.signals import pre_team_request, pre_team_join, ClaNotSi
 from transifex.resources.models import RLStats, Resource
 from transifex.teams.forms import TeamSimpleForm, TeamRequestSimpleForm, ProjectsFilterForm
 from transifex.teams.models import Team, TeamAccessRequest, TeamRequest
+from transifex.teams import signals as team_signals
 # Temporary
 from transifex.txcommon import notifications as txnotification
 
@@ -423,24 +424,20 @@ def team_join_approve(request, project_slug, language_code, username):
 	team.members.add(user)
 	team.save()
 	access_request.delete()
-
-	nt = 'project_team_join_approved'
-	context = {'access_request': access_request, 'sender': request.user}
-	action_logging(request.user, [project, team], nt, context=context)
-	if settings.ENABLE_NOTICES:
-           _team_join_action_notify(access_request, project, team, nt, context)
-        success = True
+        error_msg = None
     except IntegrityError, e:
 	transaction.rollback()
-	logger.error("Something weird happened: %s" % str(e))
-        success = False
+        error_msg = e.message
+        
+    team_signals.team_join_approved.send(sender=None,
+        nt='project_team_join_approved',
+        context = {'access_request':access_request, 'sender':request.user},
+        project=project, team=team, access_request=access_request, 
+        error_msg=error_msg)
 
-    response = simplejson.dumps({
-        'user_id': user.id,
-        'success': success,
-        'accepted': True,
-    })
-    return HttpResponse(response)
+    success = False if error_msg else True
+    response = {'user_id':user.id, 'success':success, 'accepted':True} 
+    return HttpResponse(simplejson.dumps(response))
 
 pr_team_deny_member_perm=(("granular", "project_perm.coordinate_team"),)
 @access_off(team_off)
@@ -464,28 +461,23 @@ def team_join_deny(request, project_slug, language_code, username):
 
     try:
 	access_request.delete()
-	nt = 'project_team_join_denied'
-	context = {'access_request': access_request,
-		   'performer': request.user,
-		   'sender': request.user}
-	action_logging(request.user, [project, team], nt, context=context)
-	if settings.ENABLE_NOTICES:
-           _team_join_action_notify(access_request, project, team, nt, context)
-        success = True
+        error_msg = None
     except IntegrityError, e:
 	transaction.rollback()
-	logger.error("Something weird happened: %s" % str(e))
-        success = False
+        error_msg = e.message
 
-    response = simplejson.dumps({
-        'user_id': user.id,
-        'success': success,
-        'accepted': False,
-    })
-    return HttpResponse(response)
+    team_signals.team_join_denied.send(sender=None, 
+        nt='project_team_join_denied',
+        context={
+            'access_request':access_request,
+            'performer': request.user,
+            'sender': request.user},
+        project=project, team=team, access_request=access_request,
+        error_msg=error_msg)
 
-    return HttpResponseRedirect(reverse("team_detail",
-                                        args=[project_slug, language_code]))
+    success = False if error_msg else True
+    response = {'user_id':user.id, 'success':success, 'accepted':False} 
+    return HttpResponse(simplejson.dumps(response))
 
 def _team_join_action_notify(access_request, project, team, nt, context):
     """
@@ -498,6 +490,29 @@ def _team_join_action_notify(access_request, project, team, nt, context):
     # Send notification for maintainers, coordinators and the user
     notification.send(set(itertools.chain(project.maintainers.all(),
 	team.coordinators.all(), [access_request.user])), nt, context)
+
+def _team_join_action_handler(sender, **kwargs):
+    """
+    Takes care of all the tasks that can be forwarded to a task queue.
+    """
+    # yeah, I know it's 'cheap' but gimme a break.
+    nt, context = kwargs['nt'], kwargs['context']
+    project, team = kwargs['project'], kwargs['team']
+    access_request = kwargs['access_request']
+    request_user = context['sender']
+    error_msg = kwargs['error_msg']
+
+    if error_msg:
+	logger.error("Something weird happened: %s" % error_msg)
+        return
+
+    # user's request to join team was successfully accepted or rejected.
+    action_logging(request_user, [project, team], nt, context=context)
+    if settings.ENABLE_NOTICES:
+       _team_join_action_notify(access_request, project, team, nt, context)
+
+team_signals.team_join_approved.connect(_team_join_action_handler)
+team_signals.team_join_denied.connect(_team_join_action_handler)
 
 @access_off(team_off)
 @login_required
