@@ -2,6 +2,14 @@
 {% load tx_action_log %}
 {% load i18n %}
 
+{% block extrajs %}
+  <script type="text/javascript">
+    jQuery(document).ready(function($) {
+      $('a[rel*=facebox]').facebox()
+    });
+  </script>
+{% endblock %}
+
 {% if selected_user %}
   <div id="selected_user_name">
     <a href="{% url profile_public selected_user.username %}">
