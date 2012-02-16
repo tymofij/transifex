@@ -19,6 +19,25 @@
         ({{ selected_user.first_name }} {{ selected_user.last_name }})
       {% endif %}
     </a>
+
+    <div id="location">
+      {% with location=selected_user.profile.location %}
+        {% if location %}
+          From: {{ location }} </span>
+        {% endif %}
+      {% endwith %}
+    </div>
+
+    <div id="speaks">
+      {% with langs=selected_user.profile.languages.all %}
+        {% if langs %}
+          Speaks:
+          {% for lang in langs %}
+            <span class="lang">{{ lang.name }} </span>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+    </div>
   </div>
 
   <div id="actions">
