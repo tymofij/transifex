@@ -56,9 +56,7 @@
       /* handles the 'drawer' effect */
       $('a.user').pjax('#user_profile', {
         timeout: null,
-        error: function(xhr, err) {
-            console.log(xhr);
-        }
+        error: function(xhr, err) {}
       });
 
       /* handles join team request actions */

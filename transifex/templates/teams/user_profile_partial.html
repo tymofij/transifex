@@ -38,7 +38,7 @@
   </div>
 
   <div id="recent_activity">
-    <h3 class="sh-label">{% trans "Recent activity" %}</h3>
+    <h3 class="sh-label">{% trans "Recent team activity" %}</h3>
 
     {% get_public_log 5 as action_log for_user selected_user %}
     {% if not action_log %}
