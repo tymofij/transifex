@@ -14,10 +14,11 @@ from django.dispatch import Signal
 from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
-from django.http import Http404
+from django.template.response import TemplateResponse
 from django.utils.translation import ugettext as _
 
 from django.utils import simplejson
+from djpjax import pjax
 
 from actionlog.models import action_logging
 from transifex.languages.models import Language
@@ -262,12 +263,19 @@ def team_detail(request, project_slug, language_code):
 @access_off(team_off)
 @one_perm_required_or_403(pr_project_private_perm,
     (Project, 'slug__exact', 'project_slug'), anonymous_access=True)
+@pjax('teams/user_profile_partial.html')
 def team_members(request, project_slug, language_code):
-
+    username = request.GET.get('username', None)
     project = get_object_or_404(Project.objects.select_related(), slug=project_slug)
     language = get_object_or_404(Language.objects.select_related(), code=language_code)
-
     team = Team.objects.get_or_none(project, language.code)
+
+    selected_user = None
+    if username:
+        try:
+            selected_user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            pass
 
     if team:
         team_access_requests = TeamAccessRequest.objects.filter(team__pk=team.pk)
@@ -280,14 +288,15 @@ def team_members(request, project_slug, language_code):
     else:
         user_access_request = None
 
-    return render_to_response("teams/team_members.html", {
+    return TemplateResponse(request, "teams/team_members.html", {
         "project": project,
         "language": language,
         "team": team,
         "team_access_requests": team_access_requests,
         "user_access_request": user_access_request,
         "project_team_members": True,
-    }, context_instance=RequestContext(request))
+        "selected_user": selected_user,
+    })
 
 pr_team_delete=(("granular", "project_perm.maintain"),
                 ("general",  "teams.delete_team"),)
@@ -407,8 +416,8 @@ pr_team_add_member_perm=(("granular", "project_perm.coordinate_team"),)
 @transaction.commit_on_success
 def team_join_approve(request, project_slug, language_code, username):
     if not request.is_ajax() or request.method != "POST":
-	return HttpResponse>Redirect(reverse("team_detail", 
-	  args=[project_slug, language_code]))
+		return HttpResponseRedirect(reverse("team_detail", 
+	  		args=[project_slug, language_code]))
 
     # we can haz ajax post
     team = get_object_or_404(Team, project__slug=project_slug,
@@ -448,10 +457,10 @@ pr_team_deny_member_perm=(("granular", "project_perm.coordinate_team"),)
 @transaction.commit_on_success
 def team_join_deny(request, project_slug, language_code, username):
     if not request.is_ajax() or request.method != "POST":
-	return HttpResponse>Redirect(reverse("team_detail", 
-	  args=[project_slug, language_code]))
+		return HttpResponseRedirect(reverse("team_detail", 
+	  		args=[project_slug, language_code]))
 
-    # we can haz ajax post
+    # we (the cats) can haz ajax post
     team = get_object_or_404(Team, project__slug=project_slug,
         language__code=language_code)
     project = team.project

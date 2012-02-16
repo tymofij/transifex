@@ -8,6 +8,77 @@
 {% load addons %}
 {% load statistics_resources %}
 
+{% block extracss %}
+{{ block.super }}
+<style>
+  li.join_accepted {background-color:#A7DC71}
+  li.join_rejected {background-color:#E04631}
+</style>
+{% endblock %}
+
+{% block extrajs %}
+  <script type="text/javascript">
+    /*
+     * Used to slide down or up a list of members.
+     *
+     * header: the jquery .previous() div of the list to be slided.
+     */
+    function list_toggle(header) {
+      list = header.next();
+      if (list.hasClass("collapsed")) {
+        list.slideUp();
+        list.removeClass("collapsed");
+      } else {
+        list.slideDown();
+        list.addClass("collapsed");
+      }
+    }
+
+    /*
+     * This one will be called after the approval or rejection of a join request.
+     */
+    function _request_reponse_handler(data) {
+      data = JSON.parse(data);
+      if (!data['success']) {
+        return;
+      }
+
+      li = jQuery("#request_" + data['user_id']);
+      if (data['accepted']) {
+        li.addClass("join_accepted");
+      } else {
+        li.addClass("join_rejected");
+      }
+      li.fadeOut(1000);
+    }
+
+    jQuery(document).ready(function() {
+      /* handles the 'drawer' effect */
+      $('a.user').pjax('#user_profile', {
+        timeout: null,
+        error: function(xhr, err) {
+            console.log(xhr);
+        }
+      });
+
+      /* handles join team request actions */
+      jQuery("form.microform").submit(function() {
+        url = $(this).attr("action");
+        data = $(this).serialize();
+        list = jQuery("#pending_list_header").next();
+        jQuery.post(url, data, _request_reponse_handler);
+        return false;
+      });
+
+      /* handles pending list slider */
+      jQuery("#pending_list_header").click(function() {
+        list_toggle($(this));
+      });
+    });
+  </script>
+
+{% endblock %}
+
 {% block title %}{{ block.super }} | {{ project.name }}{% endblock %}
 
 {% block project_header %}
@@ -21,151 +92,110 @@
 
 <div class="obj_bigdetails">
 
-<div class="datalist clearfix">
-	{% with team.coordinators.all as coordinators %}
-	{% if coordinators %}
-	  <div class="separate-header notopmargin clearfix">
-	  	<h3 class="sh-label">{% trans "Coordinators" %}</h3>
-	  </div>
-
-	  <ul class="nomargin">
-	    {% for c in coordinators|slice:"0:6" %}
-	    <li>
-	    	<div class="tt-details">
-	        <img class="border" width="16" height="16" src="{{ c.profile.get_mugshot_url }}" style="vertical-align:middle"/>            
-	          {% if c.first_name or c.last_name %}
-	            <span class="fullname">({{ c.first_name }} {{ c.last_name }})</span>
-	          {% endif %}
-	          <a href="{% url profile_public c.username %}">{{ c.username }}</a>
-	  		</div>
-	    </li>
-	    {% endfor %}
-	  </ul>
-	{% endif %}
-	{% endwith %}
-</div>
-
-{% if team_access_requests %}
-<div class="datalist clearfix">
-
-  <div class="separate-header clearfix">
-  	<h3  class="sh-label">{% trans "Waiting for approval" %}</h3>
-	</div>
-	
-  <ul class="nomargin">
-  {% for access_request in team_access_requests|dictsort:"user.username" %}
-    <li>
-      <div class="tt-details">
-        <img class="border" width="16" height="16" src="{{ access_request.user.profile.get_mugshot_url }}" style="vertical-align:middle"/>
-        {% with access_request.user as u %}
-    	  {% if u.first_name or u.last_name %}
-        	<span class="fullname">({{ u.first_name }} {{ u.last_name }})</span>
-        {% endif %}
-        <a href="{% url profile_public access_request.user.username %}">{{ u.username }}</a>
-        {% endwith %}
-      </div>
-
-      {% if is_coordinator %}
-      <form class="microform" method="post" action="{% url team_join_approve access_request.team.project.slug access_request.team.language.code access_request.user.username %}">{% csrf_token %}
-        <input name="team_join_approve" class="i16 submit buttonized blist" type="submit" value="{% trans "Approve" %}"/>
-      </form>
-
-      <form class="microform" method="post" action="{% url team_join_deny access_request.team.project.slug access_request.team.language.code access_request.user.username %}">{% csrf_token %}
-        <input name="team_join_deny" class="i16 delete buttonized blist" type="submit" value="{% trans "Deny" %}"/>
-      </form>
-      {% endif %}
-      
-      {% ifequal request.user.pk access_request.user.pk %}
-      <form class="microform" method="post" action="{% url team_join_withdraw access_request.team.project.slug access_request.team.language.code %}">{% csrf_token %}
-        <input name="team_join_withdraw" class="i16 delete buttonized blist" type="submit" value="{% trans "Withdraw" %}"/>
-      </form>
-      {% endifequal %}
-    </li>
-  {% endfor %}
-  </ul>
-
+{% if perms.projects.change_team or is_coordinator %}
+<div class="clearfix">
+  <a class="i16 settings nude-button right" href="{% url team_update project.slug language.code %}">{% trans "Manage members" %}</a>
 </div>
 {% endif %}
 
+  <div id="drawerbox">
+    <div id="lefty">
 
-{% with team.members.all as members %}
-<div class="datalist">
+      {% if team_access_requests %}
+        <div id="pending_list_header">
+          The following user{{ team_access_requests|length|pluralize }}
+          want{% if team_access_requests|length == 1 %}s{% endif %} to join
+        </div>
+        <ul id="pending_list" class="collapsed">
+          {% for access_request in team_access_requests|dictsort:"user.username"%}
+            <li id="request_{{ access_request.user.id }}">
+              <a href="{% url team_members project.slug language.code %}?username={{access_request.user.username}}" class="user">
+              {{ access_request.user.username }}
+              {% if access_request.user.first_name or access_request.user.last_name %}
+                <span class="fullname">
+                  ({{ access_request.user.first_name }}
+                  {{ access_request.user.last_name }})
+                </span>
+              </a>
+              {% endif %}
+              {% if is_coordinator %}
+                <form class="microform" method="post" action="{% url team_join_approve access_request.team.project.slug access_request.team.language.code access_request.user.username %}">{% csrf_token %}
+                  <input name="team_join_approve" class="i16 submit buttonized blist" type="submit" value="{% trans "Accept" %}"/>
+                </form>
 
-  <div class="separate-header clearfix">
-  	<h3 class="sh-label">{% trans "Translators" %}</h3>
-	</div>
+                <form class="microform" method="post" action="{% url team_join_deny access_request.team.project.slug access_request.team.language.code access_request.user.username %}">{% csrf_token %}
+                  <input name="team_join_deny" class="i16 delete buttonized blist" type="submit" value="{% trans "Reject" %}"/>
+                </form>
+              {% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
 
-  {% if members %}
-  <ul class="nomargin">
-  {% for m in members|dictsort:"username" %}
-    <li>
-      <div class="tt-details">
-        <img class="border" width="16" height="16" src="{{ m.profile.get_mugshot_url }}" style="vertical-align:middle"/>
-    		{% if m.first_name or m.last_name %}
-    			<span class="fullname">({{ m.first_name }} {{ m.last_name }})</span>
-    		{% endif %}
-        <a href="{% url profile_public m.username %}">{{ m }}</a>
-      </div>
+      {% with members=team.members.all coordinators=team.coordinators.all reviewers=team.revieweres.all %}
 
-      {% ifequal request.user.pk m.pk %}
-      <form class="microform" method="post" action="{% url team_leave project.slug language.code %}">{% csrf_token %}
-          <input name="team_leave" class="i16 buttonized blist user_delete" type="submit" value="{% trans "Leave" %}"/>
-      </form>
-      {% endifequal %}
+      {% if members or coordinators or reviewers %}
+        <div id="member_list_header" class="drawer">
+          Team members:
+        </div>
+        <ul class="drawer">
+        {% for coordinator in coordinators %}
+            <li id="{{ coordinator.id }}" class="user">
+              <a href="{% url team_members project.slug language.code %}?username={{coordinator.username}}" class="user">
+                {{ coordinator.username }}
+                {% if coordinator.first_name or coordinator.last_name %}
+                  <span class="fullname">
+                    ({{ coordinator.first_name }}
+                    {{ coordinator.last_name }})
+                  </span>
+                {% endif %}
+              </a>
+            </li>
+        {% endfor %}
+        {% for reviewer in reviewers %}
+            <li id="{{ reviewer.id }}" class="user">
+              <a href="{% url team_members project.slug language.code %}?username={{reviewer.username}}" class="user">
+                {{ reviewer.username }}
+                {% if reviewer.first_name or reviewer.last_name %}
+                  <span class="fullname">
+                    ({{ reviewer.first_name }}
+                    {{ reviewer.last_name }})
+                  </span>
+                {% endif %}
+              </a>
+            </li>
+        {% endfor %}
+        {% for member in members %}
+            <li id="{{ member.id }}" class="user">
+              <a href="{% url team_members project.slug language.code %}?username={{member.username}}" class="user">
+                {{ member.username }}
+                {% if member.first_name or member.last_name %}
+                  <span class="fullname">
+                    ({{ member.first_name }}
+                    {{ member.last_name }})
+                  </span>
+                {% endif %}
+              </a>
+            </li>
+        {% endfor %}
+        </ul>
+      {% endif %}
+    </div>
 
-    </li>
-  {% endfor %}
-  </ul>
-  {% else %}
-  {% url connect_people as url_connect %}  
-  <p class="i16 infomsg">{% blocktrans %} Translators can help you speed up the localization process. <a href="{{url_connect }}" title="Explore our community" >Connect with them&nbsp;&raquo;</a> {% endblocktrans %}</p>
-  {% endif %}
-  
+    {% endwith %}
+
+    <div id="righty">
+    </div>
+
+  </div>
+
+  <div id="user_profile">
+    {% include "teams/user_profile_partial.html"%}
+  </div>
+
 </div>
 
-{% endwith %}
-
-
-{% with team.reviewers.all as reviewers %}
-<div class="datalist">
-
-  <div class="separate-header clearfix">
-  	<h3  class="sh-label">{% trans "Reviewers" %}</h3>
-	</div>
-
-  {% if reviewers %}
-  <ul>
-  {% for r in reviewers|dictsort:"username" %}
-    <li>
-      <div class="tt-details">
-        <img class="border" width="16" height="16" src="{{ m.profile.get_mugshot_url }}" style="vertical-align:middle"/>
-    		{% if r.first_name or r.last_name %}
-    			<span class="fullname">({{ r.first_name }} {{ r.last_name }})</span>
-    		{% endif %}
-        <a href="{% url profile_public r.username %}">{{ r }}</a>
-      </div>
-
-      {% ifequal request.user.pk r.pk %}
-      <form class="microform" method="post" action="{% url team_leave project.slug language.code %}">{% csrf_token %}
-          <input name="team_leave" class="i16 buttonized blist user_delete" type="submit" value="{% trans "Leave" %}"/>
-      </form>
-      {% endifequal %}
-
-    </li>
-  {% endfor %}
-  </ul>
-  {% else %}
-  <p class="i16 infomsg">{% trans "Reviewers improve the quality of your translations. How about adding some?" %}</p>
-  {% endif %}
-  
-</div>
-
-{% endwith %}
-
-
-</div>
 {% endblock %}
-
 
 {% block content_footer %}
 <div id="content_footer_center"></div>
