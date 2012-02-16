@@ -296,6 +296,7 @@ def team_members(request, project_slug, language_code):
         "user_access_request": user_access_request,
         "project_team_members": True,
         "selected_user": selected_user,
+        "next_url": request.get_full_path(),
     })
 
 pr_team_delete=(("granular", "project_perm.maintain"),
