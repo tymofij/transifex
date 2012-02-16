@@ -89,6 +89,9 @@
 {% block content_main %}
 {% get_permission "project_perm.submit_translations" for request.user and team as "can_submit_translations" %}
 {% get_permission "project_perm.coordinate_team" for request.user and project,language as "is_coordinator" %}
+{% get_permission "project_perm.maintain" for request.user and project as "is_maintainer" %}
+
+{% with members=team.members.all coordinators=team.coordinators.all reviewers=team.revieweres.all %}
 
 <div class="obj_bigdetails">
 
@@ -101,38 +104,38 @@
   <div id="drawerbox">
     <div id="lefty">
 
-      {% if team_access_requests %}
-        <div id="pending_list_header">
-          The following user{{ team_access_requests|length|pluralize }}
-          want{% if team_access_requests|length == 1 %}s{% endif %} to join
-        </div>
-        <ul id="pending_list" class="collapsed">
-          {% for access_request in team_access_requests|dictsort:"user.username"%}
-            <li id="request_{{ access_request.user.id }}">
-              <a href="{% url team_members project.slug language.code %}?username={{access_request.user.username}}" class="user">
-              {{ access_request.user.username }}
-              {% if access_request.user.first_name or access_request.user.last_name %}
-                <span class="fullname">
-                  ({{ access_request.user.first_name }}
-                  {{ access_request.user.last_name }})
-                </span>
-              </a>
-              {% endif %}
-              {% if is_coordinator %}
-                <form class="microform" method="post" action="{% url team_join_approve access_request.team.project.slug access_request.team.language.code access_request.user.username %}">{% csrf_token %}
-                  <input name="team_join_approve" class="i16 submit buttonized blist" type="submit" value="{% trans "Accept" %}"/>
-                </form>
+      {% if is_coordinator or is_maintainer %}
+        {% if team_access_requests %}
+          <div id="pending_list_header">
+            The following user{{ team_access_requests|length|pluralize }}
+            want{% if team_access_requests|length == 1 %}s{% endif %} to join
+          </div>
+          <ul id="pending_list" class="collapsed">
+            {% for access_request in team_access_requests|dictsort:"user.username"%}
+              <li id="request_{{ access_request.user.id }}">
+                <a href="{% url team_members project.slug language.code %}?username={{access_request.user.username}}" class="user">
+                {{ access_request.user.username }}
+                {% if access_request.user.first_name or access_request.user.last_name %}
+                  <span class="fullname">
+                    ({{ access_request.user.first_name }}
+                    {{ access_request.user.last_name }})
+                  </span>
+                </a>
+                {% endif %}
+                {% if is_coordinator %}
+                  <form class="microform" method="post" action="{% url team_join_approve access_request.team.project.slug access_request.team.language.code access_request.user.username %}">{% csrf_token %}
+                    <input name="team_join_approve" class="i16 submit buttonized blist" type="submit" value="{% trans "Accept" %}"/>
+                  </form>
 
-                <form class="microform" method="post" action="{% url team_join_deny access_request.team.project.slug access_request.team.language.code access_request.user.username %}">{% csrf_token %}
-                  <input name="team_join_deny" class="i16 delete buttonized blist" type="submit" value="{% trans "Reject" %}"/>
-                </form>
-              {% endif %}
-            </li>
-          {% endfor %}
-        </ul>
+                  <form class="microform" method="post" action="{% url team_join_deny access_request.team.project.slug access_request.team.language.code access_request.user.username %}">{% csrf_token %}
+                    <input name="team_join_deny" class="i16 delete buttonized blist" type="submit" value="{% trans "Reject" %}"/>
+                  </form>
+                {% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+        {% endif %}
       {% endif %}
-
-      {% with members=team.members.all coordinators=team.coordinators.all reviewers=team.revieweres.all %}
 
       {% if members or coordinators or reviewers %}
         <div id="member_list_header" class="drawer">
@@ -182,18 +185,17 @@
       {% endif %}
     </div>
 
-    {% endwith %}
-
     <div id="righty">
+      <div id="user_profile">
+        {% include "teams/user_profile_partial.html"%}
+      </div>
     </div>
 
   </div>
 
-  <div id="user_profile">
-    {% include "teams/user_profile_partial.html"%}
-  </div>
-
 </div>
+
+{% endwith %}
 
 {% endblock %}
 

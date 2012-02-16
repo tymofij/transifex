@@ -24,10 +24,12 @@
   <div id="actions">
     {% hook "recommend_button.html" %}
 
-    {% if selected_user in team.members.all %}
-      <div id="unmember">
-        Unmember
-      </div>
+    {% if is_coordinator or is_maintainer %}
+      {% if selected_user in team.members.all %}
+        <div id="unmember">
+          Unmember
+        </div>
+      {% endif %}
     {% endif %}
   </div>
 
