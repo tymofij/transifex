@@ -50,6 +50,14 @@
         li.addClass("join_rejected");
       }
       li.fadeOut(1000);
+
+      setTimeout(function() {
+        li.remove();
+        if (jQuery("#pending_list li").length == 0) {
+          jQuery("#pending_list").hide();
+          jQuery("#pending_list_header").hide();
+        }
+      }, 1000);
     }
 
     jQuery(document).ready(function() {
