@@ -147,7 +147,10 @@ class PublicProjectManager(models.Manager):
 def validate_slug_not_in_blacklisted(value):
     blacklist = getattr(settings, "SUBDOMAIN_BLACKLIST", ())
     if value in blacklist:
-        raise ValidationError("this slug is reverved")
+        raise ValidationError(_("This slug is reverved"))
+def validate_slug_is_lowercase(value):
+    if lower(value) != value:
+        raise ValidationError(_("Only lowercase slugs are accepted"))
 
 class Project(models.Model):
     """
@@ -159,7 +162,8 @@ class Project(models.Model):
                     'Moreover, private projects are limited according to billing '
                     'plans for the user account.'))
     slug = models.SlugField(_('Slug'), max_length=30, unique=True,
-        validators=[validate_slug_not_in_blacklisted, validate_slug, ],
+        validators=[validate_slug_not_in_blacklisted,
+                    validate_slug_is_lowercase, validate_slug, ],
         help_text=_('A short label to be used in the URL, containing only '
                     'letters, numbers, underscores or hyphens.'))
     name = models.CharField(_('Name'), max_length=50,
