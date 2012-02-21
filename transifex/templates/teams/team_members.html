@@ -145,6 +145,9 @@
         <div id="member_list_header" class="drawer">
           Team members:
         </div>
+
+        {% autopaginate all_members 10 %}
+
         <ul class="drawer">
         {% for member in all_members %}
             <li id="{{ member.id }}" class="user">
@@ -160,6 +163,9 @@
             </li>
         {% endfor %}
         </ul>
+
+        {% paginate %}
+
       {% endif %}
     </div>
 
