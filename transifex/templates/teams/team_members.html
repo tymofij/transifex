@@ -97,8 +97,6 @@
 {% get_permission "project_perm.coordinate_team" for request.user and project,language as "is_coordinator" %}
 {% get_permission "project_perm.maintain" for request.user and project as "is_maintainer" %}
 
-{% with members=team.members.all coordinators=team.coordinators.all reviewers=team.revieweres.all %}
-
 <div class="obj_bigdetails">
 
 {% if perms.projects.change_team or is_coordinator %}
@@ -143,38 +141,12 @@
         {% endif %}
       {% endif %}
 
-      {% if members or coordinators or reviewers %}
+      {% if all_members %}
         <div id="member_list_header" class="drawer">
           Team members:
         </div>
         <ul class="drawer">
-        {% for coordinator in coordinators %}
-            <li id="{{ coordinator.id }}" class="user">
-              <a href="{% url team_members project.slug language.code %}?username={{coordinator.username}}" class="user">
-                {{ coordinator.username }}
-                {% if coordinator.first_name or coordinator.last_name %}
-                  <span class="fullname">
-                    ({{ coordinator.first_name }}
-                    {{ coordinator.last_name }})
-                  </span>
-                {% endif %}
-              </a>
-            </li>
-        {% endfor %}
-        {% for reviewer in reviewers %}
-            <li id="{{ reviewer.id }}" class="user">
-              <a href="{% url team_members project.slug language.code %}?username={{reviewer.username}}" class="user">
-                {{ reviewer.username }}
-                {% if reviewer.first_name or reviewer.last_name %}
-                  <span class="fullname">
-                    ({{ reviewer.first_name }}
-                    {{ reviewer.last_name }})
-                  </span>
-                {% endif %}
-              </a>
-            </li>
-        {% endfor %}
-        {% for member in members %}
+        {% for member in all_members %}
             <li id="{{ member.id }}" class="user">
               <a href="{% url team_members project.slug language.code %}?username={{member.username}}" class="user">
                 {{ member.username }}
@@ -201,10 +173,8 @@
 
 </div>
 
-{% endwith %}
-
 {% endblock %}
 
 {% block content_footer %}
-<div id="content_footer_center"></div>
+  <div id="content_footer_center"></div>
 {% endblock %}

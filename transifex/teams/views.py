@@ -288,10 +288,17 @@ def team_members(request, project_slug, language_code):
     else:
         user_access_request = None
 
+    all_members = User.objects.filter(
+      Q(team_members__id=team.id) |
+      Q(team_coordinators__id=team.id) |
+      Q(team_reviewers=team.id)
+    ).distinct()
+
     return TemplateResponse(request, "teams/team_members.html", {
         "project": project,
         "language": language,
         "team": team,
+        "all_members": all_members,
         "team_access_requests": team_access_requests,
         "user_access_request": user_access_request,
         "project_team_members": True,
