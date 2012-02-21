@@ -16,7 +16,6 @@ class Migration(DataMigration):
     def forwards(self, orm):
         "Write your forwards methods here."
 
-        from ipdb import set_trace; set_trace()
         qs = db.execute(
             "SELECT p1.slug, p2.slug "\
             "FROM projects_project AS p1 "\
@@ -27,9 +26,10 @@ class Migration(DataMigration):
         assertion_error = "incomplete list of slugs to be changed, perhaps do "\
                           "some more data-mining on the database and update "\
                           "the migration first"
-        assert len(qs) == len(LESS_IMPORTANT_SLUGS)
+        assert len(qs) == len(LESS_IMPORTANT_SLUGS), assertion_error
         assert [(a.lower(), b.lower()) for a, b in qs] ==\
-                [(a.lower(), a.lower()) for a in LESS_IMPORTANT_SLUGS]
+                [(a.lower(), a.lower()) for a in LESS_IMPORTANT_SLUGS],\
+                assertion_error
 
         for project in orm['projects.Project'].objects.\
                 filter(slug__in=LESS_IMPORTANT_SLUGS):
