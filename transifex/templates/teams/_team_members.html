@@ -1,0 +1,26 @@
+{% load i18n %}
+
+{% if all_members %}
+<div id="members_list">
+
+  <h3 class="header drawer">{% trans "Team members:" %}</h3>
+
+  <ul class="list drawer">
+  {% for member in all_members %}
+      <li id="{{ member.id }}" class="user">
+        <a href="{% url team_members_edit project.slug language.code %}?username={{member.username}}" class="user">
+          {{ member.username }}
+          {% if member.first_name or member.last_name %}
+            <span class="fullname">
+              ({{ member.first_name }} 
+              {{ member.last_name }})
+            </span>
+          {% endif %}
+        </a>
+      </li>
+  {% endfor %}
+  </ul>
+
+</div>
+
+{% endif %}
