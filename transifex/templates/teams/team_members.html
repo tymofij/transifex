@@ -13,6 +13,7 @@
 <style>
   li.join_accepted {background-color:#A7DC71}
   li.join_rejected {background-color:#E04631}
+  a.user.active {color:black}
 </style>
 {% endblock %}
 
@@ -23,8 +24,7 @@
      *
      * header: the jquery .previous() div of the list to be slided.
      */
-    function list_toggle(header) {
-      list = header.next();
+    function list_toggle(list) {
       if (list.hasClass("collapsed")) {
         list.slideUp();
         list.removeClass("collapsed");
@@ -39,23 +39,39 @@
      */
     function _request_reponse_handler(data) {
       data = JSON.parse(data);
+      /* les poulos */
       if (!data['success']) {
         return;
       }
 
-      li = jQuery("#request_" + data['user_id']);
+      /* hide 'pending li', no matter if user was accepted or not */
+      request_li = jQuery("#request_" + data['user_id']);
       if (data['accepted']) {
-        li.addClass("join_accepted");
+        request_li.addClass("join_accepted");
       } else {
-        li.addClass("join_rejected");
+        request_li.addClass("join_rejected");
       }
-      li.fadeOut(1000);
+      request_li.fadeOut(1000);
 
+      /* If user was accepted, move the 'pending li' to the top of the team
+       * members list but remove 'accept'/'reject' buttons */
       setTimeout(function() {
-        li.remove();
-        if (jQuery("#pending_list li").length == 0) {
-          jQuery("#pending_list").hide();
-          jQuery("#pending_list_header").hide();
+        if (data['success']) {
+          request_li.removeClass("join_accepted");
+          $("#members_list ul").prepend(request_li);
+          request_li.fadeIn(1000);
+          request_li.children().each(function() {
+            if ($(this).is("form")) {
+              $(this).remove();
+            }
+          });
+        } else {
+          request_li.remove();
+        }
+
+        /* If no user in the pending list, remove it. */
+        if (jQuery("#pending_list ul li").length == 0) {
+          jQuery("#pending_list").remove();
         }
       }, 1000);
     }
@@ -77,8 +93,19 @@
       });
 
       /* handles pending list slider */
-      jQuery("#pending_list_header").click(function() {
-        list_toggle($(this));
+      jQuery("#pending_list :first").click(function() {
+        list_toggle($(this).next());
+      });
+
+      /* handles invite list slider */
+      jQuery("#invitation_list :first").click(function() {
+        list_toggle($(this).next());
+      });
+
+      /* handles style of clicked users */
+      $('a.user').live('click', function() {
+        $('a.user').removeClass('active');
+        $(this).addClass('active');
       });
     });
   </script>
@@ -105,73 +132,38 @@
 </div>
 {% endif %}
 
+  {% if is_coordinator or is_maintainer %}
+    <div id="team_members_sections">
+      <a href="{% url team_members_edit project.slug language.code %}">{% trans "Edit members" %}</a>
+      <a href="{% url team_members_create project.slug language.code %}">{% trans "Create team" %}</a>
+    </div>
+  {% endif %}
+
   <div id="drawerbox">
+
     <div id="lefty">
-
-      {% if is_coordinator or is_maintainer %}
-        {% if team_access_requests %}
-          <div id="pending_list_header">
-            The following user{{ team_access_requests|length|pluralize }}
-            want{% if team_access_requests|length == 1 %}s{% endif %} to join
-          </div>
-          <ul id="pending_list" class="collapsed">
-            {% for access_request in team_access_requests|dictsort:"user.username"%}
-              <li id="request_{{ access_request.user.id }}">
-                <a href="{% url team_members project.slug language.code %}?username={{access_request.user.username}}" class="user">
-                {{ access_request.user.username }}
-                {% if access_request.user.first_name or access_request.user.last_name %}
-                  <span class="fullname">
-                    ({{ access_request.user.first_name }}
-                    {{ access_request.user.last_name }})
-                  </span>
-                </a>
-                {% endif %}
-                {% if is_coordinator %}
-                  <form class="microform" method="post" action="{% url team_join_approve access_request.team.project.slug access_request.team.language.code access_request.user.username %}">{% csrf_token %}
-                    <input name="team_join_approve" class="i16 submit buttonized blist" type="submit" value="{% trans "Accept" %}"/>
-                  </form>
-
-                  <form class="microform" method="post" action="{% url team_join_deny access_request.team.project.slug access_request.team.language.code access_request.user.username %}">{% csrf_token %}
-                    <input name="team_join_deny" class="i16 delete buttonized blist" type="submit" value="{% trans "Reject" %}"/>
-                  </form>
-                {% endif %}
-              </li>
-            {% endfor %}
-          </ul>
+      {% if action == 'create' %}
+        {% if is_coordinator or is_maintainer %}
+          {% include 'teams/_invitation_list.html' %}
         {% endif %}
+        {% autopaginate lang_speakers 10 %}
+        {% include 'teams/_language_speakers.html' %}
       {% endif %}
 
-      {% if all_members %}
-        <div id="member_list_header" class="drawer">
-          Team members:
-        </div>
-
+      {% if action == 'edit' %}
+        {% if is_coordinator or is_maintainer %}
+          {% include 'teams/_pending_list.html' %}
+        {% endif %}
         {% autopaginate all_members 10 %}
-
-        <ul class="drawer">
-        {% for member in all_members %}
-            <li id="{{ member.id }}" class="user">
-              <a href="{% url team_members project.slug language.code %}?username={{member.username}}" class="user">
-                {{ member.username }}
-                {% if member.first_name or member.last_name %}
-                  <span class="fullname">
-                    ({{ member.first_name }}
-                    {{ member.last_name }})
-                  </span>
-                {% endif %}
-              </a>
-            </li>
-        {% endfor %}
-        </ul>
-
-        {% paginate %}
-
+        {% include 'teams/_team_members.html' %}
       {% endif %}
+
+      {% paginate %}
     </div>
 
     <div id="righty">
       <div id="user_profile">
-        {% include "teams/user_profile_partial.html"%}
+        {% include "teams/_user_profile.html" %}
       </div>
     </div>
 

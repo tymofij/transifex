@@ -11,7 +11,7 @@ from django.db import IntegrityError
 from django.db import transaction
 from django.db.models import Q, Sum
 from django.dispatch import Signal
-from django.http import HttpResponseRedirect, HttpResponse
+from django.http import HttpResponseRedirect, HttpResponse, Http404
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.template.response import TemplateResponse
@@ -263,8 +263,17 @@ def team_detail(request, project_slug, language_code):
 @access_off(team_off)
 @one_perm_required_or_403(pr_project_private_perm,
     (Project, 'slug__exact', 'project_slug'), anonymous_access=True)
-@pjax('teams/user_profile_partial.html')
-def team_members(request, project_slug, language_code):
+@pjax('teams/_user_profile.html')
+def team_members(request, project_slug, language_code, action=None):
+    """
+    A 'parent' view that decides if we want to edit or create a team. It gathers
+    the data needed in both views and passes the former to the latter.
+
+    If the request is a pjax one, it will only render the partial that needs
+    to be rendered.
+
+    "It's so complicated it's cool" -- Insheeption, Southpark
+    """
     username = request.GET.get('username', None)
     project = get_object_or_404(Project.objects.select_related(), slug=project_slug)
     language = get_object_or_404(Language.objects.select_related(), code=language_code)
@@ -277,34 +286,65 @@ def team_members(request, project_slug, language_code):
         except User.DoesNotExist:
             pass
 
+    # determining if we want to edit or create our team
+    if action == 'edit' or action not in ['edit', 'create']:
+        context_populator = _team_members_edit
+    elif action == 'create':
+        context_populator = _team_members_create
+    else:
+        raise Http404
+
+    context = {
+        'project': project,
+        'language': language,
+        'team': team,
+        'selected_user': selected_user,
+        'next_url': request.get_full_path(),
+        'project_team_members': True,
+        'action': action,
+    }
+
+    context.update(context_populator(request, context))
+    return TemplateResponse(request, 'teams/team_members.html', context)
+
+def _team_members_edit(request, context):
+    """
+    It's called by team_members, if the request.user has selected to edit the
+    team.
+    """
+    team = context['team']
     if team:
-        team_access_requests = TeamAccessRequest.objects.filter(team__pk=team.pk)
+        team_access_requests = TeamAccessRequest.objects
+        team_access_requests = team_access_requests.filter(team__pk=team.pk)
+        if request.user.is_authenticated():
+            tar_set = request.user.teamaccessrequest_set
+            user_access_request = tar_set.filter(team__pk=team.pk)
+        else:
+            user_access_request = None
     else:
         team_access_requests = None
-
-    if team and request.user.is_authenticated():
-        user_access_request = request.user.teamaccessrequest_set.filter(
-            team__pk=team.pk)
-    else:
-        user_access_request = None
 
     all_members = User.objects.filter(
       Q(team_members__id=team.id) |
       Q(team_coordinators__id=team.id) |
       Q(team_reviewers=team.id)
-    ).distinct()
+    ).distinct().only('username', 'first_name', 'last_name')
 
-    return TemplateResponse(request, "teams/team_members.html", {
-        "project": project,
-        "language": language,
-        "team": team,
-        "all_members": all_members,
-        "team_access_requests": team_access_requests,
-        "user_access_request": user_access_request,
-        "project_team_members": True,
-        "selected_user": selected_user,
-        "next_url": request.get_full_path(),
-    })
+    return {
+        'all_members': all_members,
+        'team_access_requests': team_access_requests,
+        'user_access_request': user_access_request,
+    }
+
+def _team_members_create(request, context):
+    """
+    It's called by team_members, if the request.user has selected to create
+    the team or add new members to it.
+    """
+    language = context['language']
+    lang_speakers = User.objects.filter(profile__languages__id=language.id)
+    lang_speakers = lang_speakers.only('username', 'first_name', 'last_name')
+    return {'lang_speakers': lang_speakers}
 
 pr_team_delete=(("granular", "project_perm.maintain"),
                 ("general",  "teams.delete_team"),)
