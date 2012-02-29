@@ -1,0 +1,100 @@
+{% load addons %} 
+{% load tx_action_log %}
+{% load i18n %}
+
+{% block extrajs %}
+  <script type="text/javascript">
+    jQuery(document).ready(function($) {
+      $('a[rel*=facebox]').facebox()
+
+      $('a#invite').click('click', function() {
+        list = $("#invitation_list ul");
+        user = $("a.user.active").parent();
+        remove_button = user.children().last();
+        user.fadeOut(500, function() {
+          if (list.children().length == 0) {
+            $("#invitation_list #empty").hide();
+          }
+          list.append(user);
+          user.fadeIn(500);
+          remove_button.show();
+          $(this).hide();
+        });
+
+        remove_button.unbind('click').bind('click', function() {
+          user = $(this).closest("li.user");
+          $(this).fadeOut(500);
+          user.fadeOut(500, function() {
+            $("#lang_speakers ul").prepend(user);
+            user.fadeIn(500);
+            $("#invite").show();
+            if ($("#invitation_list ul li").length == 0) {
+              $("#invitation_list #empty").show();
+            }
+          });
+          return false;
+        });
+        return false;
+      });
+    });
+  </script>
+{% endblock %}
+
+{% if selected_user %}
+  {% include "teams/_user_profile_id.html" with user=selected_user %}
+
+  <div id="actions">
+    {% if action == 'edit' %}
+      <div class="action">
+        {% hook "recommend_button.html" %}
+      </div
+
+      {% if is_coordinator or is_maintainer %}
+        {% if selected_user in team.members.all %}
+          <div id="action">
+            Unmember
+          </div>
+        {% endif %}
+      {% endif %}
+    {% endif %}
+
+    {% if action == 'create' %}
+      <div id="action">
+        <a id="invite">Add to invitation list</a>
+        <script type="text/javascript">
+          in_drawer = $(".drawer li#{{selected_user.id}}").length;
+          if (in_drawer) {
+            $("#invite").show();
+          }
+        </script>
+      </div>
+    {% endif %}
+  </div>
+
+  <div id="currently_working_on">
+    <h3 class="sh-label">{% trans "Currently working on" %}</h3>
+  </div>
+
+  <div id="recent_activity">
+    <h3 class="sh-label">{% trans "Recent team activity" %}</h3>
+
+    {% get_public_log 5 as action_log for_user selected_user %}
+    {% if not action_log %}
+      <p class="i16 infomsg">{% trans 'No public actions yet' %}</p>
+    {% else %}
+      <ul class="actionlist nomargin">
+        {% for entry in action_log %}
+          <li class="i16 {{entry.action_type}}">
+            <p>{{ entry.message|safe }}</p> 
+            <span class="timestamp">{{ entry.action_time|timesince }} ago</span>
+            </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  </div>
+
+  <div id="recommendations">
+    <h3 class="sh-label">{% trans "Recommendations" %}</h3>
+    {% hook "recommendation_list.html" %}
+  </div>
+{% endif %}
