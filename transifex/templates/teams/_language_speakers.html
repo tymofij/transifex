@@ -1,0 +1,26 @@
+{% if lang_speakers %}
+
+<div id="lang_speakers">
+
+  <h3 class="header drawer">Translators speaking {{ language }}:</h3>
+
+  <ul class="list drawer">
+  {% for speaker in lang_speakers %}
+      <li id="{{ speaker.id }}" class="user">
+        <a href="{% url team_members_create project.slug language.code %}?username={{speaker.username}}" class="user">
+          {{ speaker.username }}
+          {% if speaker.first_name or speaker.last_name %}
+            <span class="fullname">
+              ({{ speaker.first_name }} 
+              {{ speaker.last_name }})
+            </span>
+          {% endif %}
+            <a class="deinvite" style="display:none;">Remove</a>
+        </a>
+      </li>
+  {% endfor %}
+  </ul>
+
+</div>
+
+{% endif %}
