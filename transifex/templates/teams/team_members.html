@@ -56,7 +56,7 @@
       /* If user was accepted, move the 'pending li' to the top of the team
        * members list but remove 'accept'/'reject' buttons */
       setTimeout(function() {
-        if (data['success']) {
+        if (data['accepted']) {
           request_li.removeClass("join_accepted");
           $("#members_list ul").prepend(request_li);
           request_li.fadeIn(1000);
