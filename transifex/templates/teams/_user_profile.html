@@ -2,43 +2,50 @@
 {% load tx_action_log %}
 {% load i18n %}
 
-{% block extrajs %}
-  <script type="text/javascript">
-    jQuery(document).ready(function($) {
-      $('a[rel*=facebox]').facebox()
+<script type="text/javascript">
+  function invite() {
+    list = $("#invitation_list ul");
+    user = $("a.user.active").parent();
+    remove_button = user.children().last();
+    $(this).fadeOut(500);
 
-      $('a#invite').click('click', function() {
-        list = $("#invitation_list ul");
-        user = $("a.user.active").parent();
-        remove_button = user.children().last();
-        user.fadeOut(500, function() {
-          if (list.children().length == 0) {
-            $("#invitation_list #empty").hide();
-          }
-          list.append(user);
-          user.fadeIn(500);
-          remove_button.show();
-          $(this).hide();
-        });
-
-        remove_button.unbind('click').bind('click', function() {
-          user = $(this).closest("li.user");
-          $(this).fadeOut(500);
-          user.fadeOut(500, function() {
-            $("#lang_speakers ul").prepend(user);
-            user.fadeIn(500);
-            $("#invite").show();
-            if ($("#invitation_list ul li").length == 0) {
-              $("#invitation_list #empty").show();
-            }
-          });
-          return false;
-        });
-        return false;
-      });
+    user.fadeOut(500, function() {
+      if (list.children().length == 0) {
+        $("#invitation_list #empty").hide();
+        $("#mass_invite").fadeIn(500);
+      }
+      list.append(user);
+      user.fadeIn(500);
+      remove_button.show();
+      $(this).hide();
     });
-  </script>
-{% endblock %}
+
+    remove_button.unbind('click').bind('click', uninvite);
+    return false;
+  }
+
+  function uninvite() {
+    user = $(this).closest("li.user");
+    $(this).fadeOut(500);
+
+    user.fadeOut(500, function() {
+      $("#lang_speakers ul").prepend(user);
+      user.fadeIn(500);
+      $("#invite").show(500);
+      if ($("#invitation_list ul li").length == 0) {
+        $("#mass_invite").hide();
+        $("#invitation_list #empty").show();
+      }
+    });
+
+    return false;
+  }
+
+  jQuery(document).ready(function() {
+    $('a[rel*=facebox]').facebox()
+    $('a#invite').click('click', invite);
+  });
+</script>
 
 {% if selected_user %}
   {% include "teams/_user_profile_id.html" with user=selected_user %}
@@ -62,9 +69,11 @@
       <div id="action">
         <a id="invite">Add to invitation list</a>
         <script type="text/javascript">
-          in_drawer = $(".drawer li#{{selected_user.id}}").length;
-          if (in_drawer) {
+          uninvited = $("#lang_speakers ul li#{{selected_user.id}}").length;
+          if (uninvited) {
             $("#invite").show();
+          } else {
+            $("#invite").hide();
           }
         </script>
       </div>
