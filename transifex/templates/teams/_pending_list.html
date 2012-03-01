@@ -2,6 +2,83 @@
 
 {% if team_access_requests %}
 
+<script type="text/javascript">
+
+/* 
+ * Hide (no more) pending li, no matter if user was accepted or not
+ */
+function hide_handled_request(user_id, accepted, delay) {
+  delay = delay || 1000;
+
+  request_li = jQuery("#request_" + user_id);
+  if (accepted) {
+    request_li.addClass("join_accepted");
+  } else {
+    request_li.addClass("join_rejected");
+  }
+  request_li.fadeOut(delay);
+}
+
+/* 
+ * If user was accepted, move the 'pending li' to the top of the team
+ * members list but remove 'accept'/'reject' buttons 
+ */
+function handle_handled_request_li(accepted, delay) {
+  delay = delay || 1000;
+
+  if (data['accepted']) {
+    request_li.removeClass("join_accepted");
+    $("#members_list ul").prepend(request_li);
+    request_li.fadeIn(delay);
+    request_li.children().each(function() {
+      if ($(this).is("form")) {
+        $(this).remove();
+      }
+    });
+  } else {
+    request_li.remove();
+  }
+}
+
+/*
+ * This one will be called after the approval or rejection of a join request.
+ */
+function _request_reponse_handler(data, delay) {
+  data = JSON.parse(data);
+  /* les poulos */
+  if (!data['success']) {
+    return;
+  }
+
+  alert("here");
+  delay = delay || 1000
+
+  /* hide handled request li, no matter if user was accepted or not */
+  hide_handled_request(data['user_id'], data['accepted'], delay);
+
+  setTimeout(function() {
+    /* either remove it (rejection) or move it to members list (acceptance) */
+    handle_handled_request_li(data['accepted']); 
+
+    /* If no user in the pending list, remove it. */
+    if (jQuery("#pending_list ul li").length == 0) {
+      jQuery("#pending_list").remove();
+    }
+  }, delay);
+}
+
+jQuery(document).ready(function() {
+  /* handles join team request actions */
+  jQuery("form.microform").submit(function() {
+    url = $(this).attr("action");
+    data = $(this).serialize();
+    jQuery.post(url, data, _request_reponse_handler);
+    return false;
+  });
+});
+
+</script>
+
 <div id="pending_list">
 
   <h3 class="header">{% blocktrans count cnt=team_access_requests|length %}The following user wants to join{% plural %}The following users want to join{% endblocktrans %}</h3>
