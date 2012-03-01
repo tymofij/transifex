@@ -3,48 +3,54 @@
 {% load i18n %}
 
 <script type="text/javascript">
-  function invite() {
-    list = $("#invitation_list ul");
-    user = $("a.user.active").parent();
-    remove_button = user.children().last();
-    $(this).fadeOut(500);
 
-    user.fadeOut(500, function() {
-      if (list.children().length == 0) {
-        $("#invitation_list #empty").hide();
-        $("#mass_invite").fadeIn(500);
-      }
-      list.append(user);
-      user.fadeIn(500);
-      remove_button.show();
-      $(this).hide();
-    });
+function invite(delay) {
+  delay = delay || 500;
 
-    remove_button.unbind('click').bind('click', uninvite);
-    return false;
-  }
+  list = $("#invitation_list ul");
+  user = $("a.user.active").parent();
+  remove_button = user.children().last();
+  $(this).fadeOut(delay);
 
-  function uninvite() {
-    user = $(this).closest("li.user");
-    $(this).fadeOut(500);
-
-    user.fadeOut(500, function() {
-      $("#lang_speakers ul").prepend(user);
-      user.fadeIn(500);
-      $("#invite").show(500);
-      if ($("#invitation_list ul li").length == 0) {
-        $("#mass_invite").hide();
-        $("#invitation_list #empty").show();
-      }
-    });
-
-    return false;
-  }
-
-  jQuery(document).ready(function() {
-    $('a[rel*=facebox]').facebox()
-    $('a#invite').click('click', invite);
+  user.fadeOut(delay, function() {
+    if (list.children().length == 0) {
+      $("#invitation_list #empty").hide();
+      $("#mass_invite").fadeIn(delay);
+    }
+    list.append(user);
+    user.fadeIn(delay);
+    remove_button.show();
+    $(this).hide();
   });
+
+  remove_button.unbind('click').bind('click', uninvite);
+  return false;
+}
+
+function uninvite(delay) {
+  delay = delay || 500;
+
+  user = $(this).closest("li.user");
+  $(this).fadeOut(delay);
+
+  user.fadeOut(delay, function() {
+    $("#lang_speakers ul").prepend(user);
+    user.fadeIn(delay);
+    $("#invite").show(delay);
+    if ($("#invitation_list ul li").length == 0) {
+      $("#mass_invite").hide();
+      $("#invitation_list #empty").show();
+    }
+  });
+
+  return false;
+}
+
+jQuery(document).ready(function() {
+  $('a[rel*=facebox]').facebox()
+  $('a#invite').click('click', invite);
+});
+
 </script>
 
 {% if selected_user %}
