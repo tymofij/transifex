@@ -92,11 +92,7 @@
 
     <div id="lefty">
       {% if action == 'create' %}
-        {% if is_coordinator or is_maintainer %}
-          {% include 'teams/_invitation_list.html' %}
-        {% endif %}
-        {% autopaginate lang_speakers 10 %}
-        {% include 'teams/_language_speakers.html' %}
+        {% hook 'create_team.html' %}
       {% endif %}
 
       {% if action == 'edit' %}
@@ -105,9 +101,8 @@
         {% endif %}
         {% autopaginate all_members 10 %}
         {% include 'teams/_team_members.html' %}
+        {% paginate %}
       {% endif %}
-
-      {% paginate %}
     </div>
 
     <div id="righty">
