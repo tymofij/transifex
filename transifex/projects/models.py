@@ -258,6 +258,9 @@ class Project(models.Model):
             is_new = True
         else:
             is_new = False
+        if self.anyone_submit:
+            self.openup_suggestions = False
+
         super(Project, self).save(*args, **kwargs)
         if is_new:
             project_created.send(sender=self)

@@ -214,9 +214,13 @@ class ProjectAccessControlForm(forms.ModelForm):
         attrs={'help_text': access_control_help})
         )
 
+    openup_suggestions = forms.BooleanField(label=_('Enable suggestions'),
+            required=False,
+            help_text=_('Allow users to suggest translations from Lotte'))
+
     class Meta:
         model = Project
-        fields = ('project_type', 'outsource', 'access_control')
+        fields = ('project_type', 'outsource', 'access_control', 'openup_suggestions')
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
@@ -227,6 +231,7 @@ class ProjectAccessControlForm(forms.ModelForm):
         access_control_required = True
         project_type_initial = None
         access_control_initial = None
+        openup_suggestions_initial = False
 
         self.hub_request = self.project.hub_request
 
@@ -257,12 +262,16 @@ class ProjectAccessControlForm(forms.ModelForm):
                     project_type_initial = 'hub'
                 else:
                     project_type_initial = 'typical'
+            if access_control_initial == 'limited_access' and \
+                    self.project.openup_suggestions:
+                openup_suggestions_intial = self.project.openup_suggestions
 
         if project_type_initial:
             self.fields['project_type'].initial = project_type_initial
         
         if access_control_initial:
             self.fields['access_control'].initial = access_control_initial
+        self.fields['openup_suggestions'].initial = openup_suggestions_initial
         
         self.fields['access_control'].required = access_control_required
         self.fields['outsource'].required = outsource_required
@@ -278,6 +287,7 @@ class ProjectAccessControlForm(forms.ModelForm):
                 ).exclude(models.Q(id=self.project.id) | models.Q(private=True))
 
         self.fields["outsource"].queryset = projects
+        #from ipdb import set_trace; set_trace()
         
         project_access_control_form_start.send(sender=ProjectAccessControlForm,
             instance=self, project=self.project)

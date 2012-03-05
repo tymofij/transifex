@@ -32,9 +32,11 @@
 	    var access_control = $("input[name='access_control']:checked").val();
 	    
 	    if(access_control != 'limited_access' || project_type == 'outsourced') {
-	        $("#cla_section").hide();
+            $("#cla_section").hide();
+            $("#openup_suggestions_section").hide();
 	    } else {
 	        $("#cla_section").show();
+            $("#openup_suggestions_section").show();
 	    }
 	
 	}
@@ -140,6 +142,11 @@
 				</div>
             {% hook "access_control_additional.html" %}
 
+        <div id="openup_suggestions_section" class="access-control-extra" style="display:none;">
+            <p id="openup_suggestions">
+            {{ form.openup_suggestions }}
+            {{ form.openup_suggestions.help_text }}</p>
+        </div>
 {% if not project.anyone_submit and not project.outsource %}
    <div class="access-control-extra">
         <a class="i16 granted" href="{% url project_add_permission project.slug %}">{% trans "Give project writer rights" %}</a>
