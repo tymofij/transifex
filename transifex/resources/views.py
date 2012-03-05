@@ -228,6 +228,11 @@ def resource_actions(request, project_slug=None, resource_slug=None,
     )
     target_language = get_object_or_404(Language, code=target_lang_code)
     project = resource.project
+
+    if project.outsource:
+        openup_suggestions = project.outsource.openup_suggestions
+    else:
+        openup_suggestions = project.openup_suggestions
     # Get the team if exists to use it for permissions and links
     team = Team.objects.get_or_none(project, target_lang_code)
 
@@ -267,6 +272,7 @@ def resource_actions(request, project_slug=None, resource_slug=None,
         'user_teams': user_teams,
         'stats': stats,
         'wordcount': wordcount,
+        'openup_suggestions': openup_suggestions,
     }, context_instance = RequestContext(request))
 
 

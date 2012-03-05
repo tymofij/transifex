@@ -47,6 +47,13 @@ Suggestion = get_model('suggestions', 'Suggestion')
 class LotteBadRequestError(Exception):
     pass
 
+
+def get_openup_suggestions_for_project(project):
+    if project.outsource:
+        return project.outsource.openup_suggestions
+    else:
+        return project.openup_suggestions
+
 #Languages suported by google-spellcheck as mentioned at
 #http://www.google.com/support/toolbar/bin/answer.py?hl=en&answer=32703
 SPELLCHECK_SUPPORTED_LANGS = ['da', 'de', 'en', 'en_US', 'es', 'fi', 'fr',
@@ -67,7 +74,7 @@ def translate(request, project_slug, lang_code, resource_slug=None,
     # Permissions handling
     # Project should always be available
     project = get_object_or_404(Project, slug=project_slug)
-    openup_suggestions = project.openup_suggestions
+    openup_suggestions = get_openup_suggestions_for_project(project)
     team = Team.objects.get_or_none(project, lang_code)
     check = ProjectPermission(request.user)
     if not check.submit_translations(team or project) and not\
@@ -156,8 +163,9 @@ def translate(request, project_slug, lang_code, resource_slug=None,
         language = target_language,
         rule = 5).values_list("user", flat=True))
 
-    lotte_init.send(None, request=request, resources=resources,
-        language=target_language)
+    if not openup_suggestions:
+        lotte_init.send(None, request=request, resources=resources,
+            language=target_language)
 
     if target_language in [team.language for team in project.available_teams]:
         team_language = True
@@ -210,9 +218,11 @@ def exit(request, project_slug, lang_code, resource_slug=None, *args, **kwargs):
     project = get_object_or_404(Project, slug=project_slug)
     team = Team.objects.get_or_none(project, lang_code)
     check = ProjectPermission(request.user)
+    openup_suggestions = get_openup_suggestions_for_project(project)
     if not check.submit_translations(team or project) and not\
         check.maintain(project):
-        return permission_denied(request)
+        if not openup_suggestions:
+            return permission_denied(request)
 
     language = Language.objects.by_code_or_alias(lang_code)
 
@@ -225,6 +235,8 @@ def exit(request, project_slug, lang_code, resource_slug=None, *args, **kwargs):
         resources = Resource.objects.filter(project=project)
 
 
+    if openup_suggestions:
+        HttpResponse(url)
     data = simplejson.loads(request.raw_post_data)
 
     if data.get('updated'):
@@ -305,7 +317,6 @@ def stringset_handling(request, project_slug, lang_code, resource_slug=None,
     Function to serve AJAX data to the datatable holding the translating
     stringset.
     """
-
     project = get_object_or_404(Project, slug=project_slug)
 
     resources = []
@@ -332,8 +343,7 @@ def stringset_handling(request, project_slug, lang_code, resource_slug=None,
 
     if not check.submit_translations(team or project) and not\
         check.maintain(project):
-        if project.openup_suggestions:
-            openup_suggestions = True
+            openup_suggestions = get_openup_suggestions_for_project(project)
 
     # FIXME Do we need to check for non-POST requests and return an error?
     return _get_stringset(request.POST, resources, language, review=review,
@@ -719,7 +729,8 @@ def _get_source_strings(source_string, source_language, lang_code, more_language
              'similar_lang_strings' : similar_lang_strings }
 
 
-def _get_strings(query, target_language, source_entity):
+def _get_strings(query, target_language, source_entity,
+        user=None, openup_suggestions=False):
     """
     Helper function for returning all the Translation strings or an empty dict.
 
@@ -800,7 +811,7 @@ def push_translation(request, project_slug, lang_code, *args, **kwargs):
     # Permissions handling
     # Project should always be available
     project = get_object_or_404(Project, slug=project_slug)
-    openup_suggestions = project.openup_suggestions
+    openup_suggestions = get_openup_suggestions_for_project(project)
     team = Team.objects.get_or_none(project, lang_code)
     check = ProjectPermission(request.user)
     if not check.submit_translations(team or project) and not\
@@ -1062,9 +1073,7 @@ def tab_suggestions_snippet(request, entity_id, lang_code):
 
     source_entity = get_object_or_404(SourceEntity, pk=entity_id)
     project = source_entity.resource.project
-    if project.outsource:
-        project = project.outsource
-    openup_suggestions = project.openup_suggestions
+    openup_suggestions = get_openup_suggestions_for_project(project)
     check = ProjectPermission(request.user)
     if not check.private(source_entity.resource.project):
         if not openup_suggestions:

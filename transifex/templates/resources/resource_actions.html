@@ -102,7 +102,7 @@
       {% ifequal resource.source_language target_language %}
         {% blocktrans %}<span title="The source language cannot be translated">Source language</span>{% endblocktrans %}
       {% else %}
-        {% if can_submit_translation and resource.accept_translations or is_maintainer or resource.project.openup_suggestions %}
+        {% if can_submit_translation and resource.accept_translations or is_maintainer or openup_suggestions %}
          {% url translate_resource project.slug resource.slug target_language.code as translate_resource %}
          {% if stats.lock.valid %}
           {% with stats.lock.owner as lock_owner %}
