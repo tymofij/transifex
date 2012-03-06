@@ -193,8 +193,8 @@ class XliffHandler(SimpleCompilerFactory, Handler):
             if root.tagName != "xliff":
                 raise XliffParseError(_("Root element is not 'xliff'"))
             if not root.attributes.get('version', None):
-                raise self.HandlerParseError(_("Root element 'xliff' "\
-                        "does not have a 'version' attribute"))
+                raise self.HandlerParseError("Root element 'xliff' "\
+                        "does not have a 'version' attribute")
             for node in root.childNodes:
                 if node.nodeType == node.ELEMENT_NODE and \
                         node.localName == "file":
