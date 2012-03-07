@@ -1,4 +1,5 @@
 {% load addons %} 
+{% load permissions %}
 {% load tx_action_log %}
 {% load i18n %}
 
@@ -9,6 +10,9 @@ jQuery(document).ready(function() {
 });
 
 </script>
+
+{% get_permission "project_perm.coordinate_team" for request.user and project,language as "is_coordinator" %}
+{% get_permission "project_perm.maintain" for request.user and project as "is_maintainer" %}
 
 {% if selected_user %}
   {% include "teams/_user_profile_id.html" with user=selected_user %}
@@ -30,15 +34,9 @@ jQuery(document).ready(function() {
 
     {% if action == 'create' %}
       <div id="action">
-        <a id="invite">Add to invitation list</a>
-        <script type="text/javascript">
-          uninvited = $("#lang_speakers ul li#{{selected_user.id}}").length;
-          if (uninvited) {
-            $("#invite").show();
-          } else {
-            $("#invite").hide();
-          }
-        </script>
+        {% if is_coordinator or is_maintainer %}
+          {% hook "add_to_invitation_list.html" %}
+        {% endif %}
       </div>
     {% endif %}
   </div>
