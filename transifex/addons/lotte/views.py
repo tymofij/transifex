@@ -186,6 +186,15 @@ def translate(request, project_slug, lang_code, resource_slug=None,
     rtl = False
     if target_language.code in settings.RTL_LANGUAGE_CODES:
         rtl = True
+    if openup_suggestions:
+        suggested_strings_for_untranslated = Suggestion.objects.filter(
+            source_entity__in=Translation.objects.untranslated_source_strings(
+                resources, language).values_list('source_entity'),
+            language=target_language,
+            user=request.user
+            ).count()
+        translated_strings = translated_strings +\
+                suggested_strings_for_untranslated
 
     return render_to_response("translate.html", {
         'project': project,
@@ -366,7 +375,7 @@ def _get_stringset(post_data, resources, language, review=False, session='',
     try:
         source_strings = _get_source_strings_for_request(
             post_data, resources, source_language, language,
-            session
+            session, openup_suggestions, user
         )
     except LotteBadRequestError, e:
         logger.warning("Error in lotte filters: %s" % e.message, exc_info=True)
@@ -420,6 +429,8 @@ def _get_stringset(post_data, resources, language, review=False, session='',
     except ValueError, e:
         return HttpResponseBadRequest()
 
+    if not openup_suggestions:
+        user = None
     # NOTE: It's important to keep the translation string matching inside this
     # iteration to prevent extra un-needed queries. In this iteration only the
     # strings displayed are calculated, saving a lot of resources.
@@ -442,7 +453,8 @@ def _get_stringset(post_data, resources, language, review=False, session='',
                     user=user, openup_suggestions=openup_suggestions),
                 # 5. A number which indicates the number of Suggestion objects
                 # attached to this row of the table.
-                Suggestion.objects.filter(source_entity=s.source_entity, language__code=language.code).count(),
+                Suggestion.objects.filter(source_entity=s.source_entity, language__code=language.code
+                    ).exclude(user=user).count(),
                 # 6. save buttons and hidden context (ready to inject snippet)
                 # It includes the following content, wrapped in span tags:
                 # * SourceEntity object's "context" value
@@ -525,7 +537,7 @@ def proofread(request, project_slug, lang_code, resource_slug=None, *args, **kwa
 
 
 def _get_source_strings_for_request(post_data, resources, source_language,
-        language, session):
+        language, session, openup_suggestions=False, user=None):
     """Return the source strings that correspond to the filters in the request.
 
     Use powers of two for each possible filter, so that we can get a unique
@@ -630,7 +642,9 @@ def _get_source_strings_for_request(post_data, resources, source_language,
     return querysets[index](
             resources=resources,
             language=language,
-            users=users
+            users=users,
+            openup_suggestions=openup_suggestions,
+            user=user
         )
 
 
