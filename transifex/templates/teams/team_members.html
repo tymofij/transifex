@@ -91,7 +91,7 @@
   <div id="drawerbox">
 
     <div id="lefty">
-      {% if action == 'create' %}
+      {% if action == 'invite' %}
         {% hook 'create_team.html' %}
       {% endif %}
 
@@ -99,6 +99,9 @@
         {% if is_coordinator or is_maintainer %}
           {% include 'teams/_pending_list.html' %}
         {% endif %}
+      {% endif %}
+
+      {% if action == 'show' or action == 'edit' %}
         {% autopaginate all_members 10 %}
         {% include 'teams/_team_members.html' %}
         {% paginate %}

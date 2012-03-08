@@ -21,17 +21,18 @@ urlpatterns = patterns('',
     url(
         regex = TEAM_PARTIAL_URL + r'members/$',
         view = team_members,
-        name = 'team_members',),
+        name = 'team_members',
+        kwargs = {'action': 'show'}),
     url(
         regex = TEAM_PARTIAL_URL + r'members/edit/$',
         view = team_members,
         name = 'team_members_edit',
         kwargs = {'action': 'edit'}),
     url(
-        regex = TEAM_PARTIAL_URL + r'members/create/$',
+        regex = TEAM_PARTIAL_URL + r'members/invite/$',
         view = team_members,
         name = 'team_members_create',
-        kwargs = {'action': 'create'}),
+        kwargs = {'action': 'invite'}),
     url(
         regex = TEAM_PARTIAL_URL + r'delete/$',
         view = team_delete,

@@ -286,11 +286,12 @@ def team_members(request, project_slug, language_code, action=None):
         except User.DoesNotExist:
             pass
 
-    # determining if we want to edit or create our team
-    if action == 'edit' or action not in ['edit', 'create']:
+    if action == 'show':
+        context_populator = _team_members_show
+    elif action == 'edit':
         context_populator = _team_members_edit
-    elif action == 'create':
-        context_populator = _team_members_create
+    elif action == 'invite':
+        context_populator = _team_members_invite
     else:
         raise Http404
 
@@ -307,28 +308,37 @@ def team_members(request, project_slug, language_code, action=None):
     context.update(context_populator(request, context))
     return TemplateResponse(request, 'teams/team_members.html', context)
 
-def _team_members_edit(request, context):
+def _team_members_show(request, context):
     """
-    It's called by team_members, if the request.user has selected to edit the
-    team.
+    team_members() context populator.
     """
     team = context['team']
     if team:
-        team_access_requests = TeamAccessRequest.objects
-        team_access_requests = team_access_requests.filter(team__pk=team.pk)
+        member_fields = ['username', 'first_name', 'last_name']
+        all_members = team.all_members().only(*member_fields)
+
+    return { 'all_members': all_members }
+
+def _team_members_edit(request, context):
+    """
+    team_members() context populator.
+    """
+    team = context['team']
+    team_access_requests = None
+    user_access_request = None
+    all_members = None
+
+    if team:
+        manager = TeamAccessRequest.objects
+        team_access_requests = manager.filter(team__pk=team.pk)
         if request.user.is_authenticated():
-            tar_set = request.user.teamaccessrequest_set
-            user_access_request = tar_set.filter(team__pk=team.pk)
+            rel_manager = request.user.teamaccessrequest_set
+            user_access_request = rel_manager.filter(team__pk=team.pk)
         else:
             user_access_request = None
-    else:
-        team_access_requests = None
 
-    all_members = User.objects.filter(
-      Q(team_members__id=team.id) |
-      Q(team_coordinators__id=team.id) |
-      Q(team_reviewers=team.id)
-    ).distinct().only('username', 'first_name', 'last_name')
+        member_fields = ['username', 'first_name', 'last_name']
+        all_members = team.all_members().only(*member_fields)
 
     return {
         'all_members': all_members,
@@ -336,10 +346,9 @@ def _team_members_edit(request, context):
         'user_access_request': user_access_request,
     }
 
-def _team_members_create(request, context):
+def _team_members_invite(request, context):
     """
-    It's called by team_members, if the request.user has selected to create
-    the team or add new members to it.
+    team_members() context populator.
     """
     language = context['language']
     lang_speakers = User.objects.filter(profile__languages__id=language.id)

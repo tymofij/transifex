@@ -32,7 +32,7 @@ jQuery(document).ready(function() {
       {% endif %}
     {% endif %}
 
-    {% if action == 'create' %}
+    {% if action == 'invite' %}
       <div id="action">
         {% if is_coordinator or is_maintainer %}
           {% hook "add_to_invitation_list.html" %}
