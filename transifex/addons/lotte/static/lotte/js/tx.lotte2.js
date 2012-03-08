@@ -967,7 +967,9 @@ lotte_tabs = function(that) {
         var source_id = parseInt(nTr.find('.source_id').text());
 
         // Get the details and inject them.
-        var tab_suggestions_urlp = tab_suggestions_urlp_tmpl.replace('1111111111', source_id)
+        var tab_suggestions_urlp = tab_suggestions_urlp_tmpl.replace('1111111111', source_id);
+        if (openup_suggestions)
+          tab_suggestions_urlp += '?openup_suggestions=1';
         nTr.next(".suggestions").find("td.inject_here").load(tab_suggestions_urlp, function(response, status, xhr) {
             if (status == "error") {
             var msg = "Sorry but there was an error: ";

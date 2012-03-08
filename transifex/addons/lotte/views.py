@@ -189,7 +189,7 @@ def translate(request, project_slug, lang_code, resource_slug=None,
     if openup_suggestions:
         suggested_strings_for_untranslated = Suggestion.objects.filter(
             source_entity__in=Translation.objects.untranslated_source_strings(
-                resources, language).values_list('source_entity'),
+                resources, target_language).values_list('source_entity'),
             language=target_language,
             user=request.user
             ).count()
@@ -650,7 +650,17 @@ def _get_source_strings_for_request(post_data, resources, source_language,
 
 def _get_all_source_strings(resources, *args, **kwargs):
     """Return all source strings for the resources."""
-    return Translation.objects.source_strings(resources)
+    all_source_strings =  Translation.objects.source_strings(resources)
+    openup_suggestions = kwargs.get('openup_suggestions', False)
+    user = kwargs.get('user', None)
+    if openup_suggestions and user:
+        source_entities = Translation.objects.filter(
+                source_entity__in=all_source_strings.values_list(
+                    'source_entity'), reviewed = True
+                ).values_list('source_entity')
+        all_source_strings = all_source_strings.exclude(
+                source_entity__in=source_entities)
+    return all_source_strings
 
 
 def _get_untranslated_source_strings(resources, language, *args, **kwargs):
@@ -658,7 +668,17 @@ def _get_untranslated_source_strings(resources, language, *args, **kwargs):
     Get only the source strigns that haven't been translated
     in the specified language.
     """
-    return Translation.objects.untranslated_source_strings(resources, language)
+    untranslated_source_strings = \
+            Translation.objects.untranslated_source_strings(resources, language)
+    openup_suggestions = kwargs.get('openup_suggestions', False)
+    user = kwargs.get('user', None)
+    if openup_suggestions and user:
+        source_entities = Suggestion.objects.filter(source_entity__in=\
+                untranslated_source_strings.values_list('source_entity'),
+                user=user).values_list('source_entity')
+        untranslated_source_strings = untranslated_source_strings.exclude(
+                source_entity__in=source_entities)
+    return untranslated_source_strings
 
 
 def _get_translated_source_strings(resources, language, *args, **kwargs):
@@ -682,7 +702,25 @@ def _get_unreviewed_source_strings(resources, language, *args, **kwargs):
     Get only the source strings that have been translated in the
     specified language but their translations are not yet reviewed.
     """
-    return Translation.objects.unreviewed_source_strings(resources, language)
+    unreviewed_source_strings = Translation.objects.unreviewed_source_strings(
+            resources, language)
+    openup_suggestions = kwargs.get('openup_suggestions', False)
+    user = kwargs.get('user', None)
+    if openup_suggestions and user:
+        source_entities = Suggestion.objects.filter(source_entity__in=\
+                SourceEntity.objects.filter(resource__in=resources),
+                language=language, user=user).exclude(
+                source_entity__in=Translation.objects.filter(
+                    source_entity__resource__in=resources,
+                    language=language, reviewed=True).values_list(
+                        'source_entity')
+                ).values_list('source_entity')
+        unreviewed_source_strings |= Translation.objects.filter(
+                source_entity__in=source_entities,
+                resource__in=resources,
+                language=resources[0].source_language,
+                rule=5)
+    return unreviewed_source_strings
 
 
 def _get_untranslated_and_reviewed_source_strings(resources, language, *args, **kwargs):
@@ -791,16 +829,16 @@ def _get_strings(query, target_language, source_entity,
         try:
             translation_strings["other"] = query.get(source_entity=source_entity,
                                                      rule=5).string
-            if openup_suggestions:
-                suggestion = source_entity.suggestions.filter(user=user)
-                if suggestion:
-                    translation_strings["other"] = suggestion[0].string
 
             if not translation_strings["other"]:
                 translation_strings["other"] = query.get(source_entity=source_entity,
                                                          rule=5).string
         except Translation.DoesNotExist:
             translation_strings["other"] = ""
+        if openup_suggestions:
+            suggestion = source_entity.suggestions.filter(user=user)
+            if suggestion:
+                translation_strings["other"] = suggestion[0].string
     return translation_strings
 
 
@@ -1092,13 +1130,17 @@ def tab_suggestions_snippet(request, entity_id, lang_code):
     if not check.private(source_entity.resource.project):
         if not openup_suggestions:
             return permission_denied(request)
-
+    if request.GET.has_key('openup_suggestions'):
+        openup_suggestions = True
+    else:
+        openup_suggestions = False
     current_translation = source_entity.get_translation(lang_code)
 
     return render_to_response("tab_suggestions_snippet.html", {
         'source_entity': source_entity,
         'lang_code': lang_code,
-        'current_translation': current_translation
+        'current_translation': current_translation,
+        'openup_suggestions': openup_suggestions
         },
     context_instance = RequestContext(request))
 

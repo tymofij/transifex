@@ -17,24 +17,34 @@ class SuggestionsNode(ResolverNode):
         kwargs = {
             'source_entity_id': cls.next_bit_for(bits, tag_name),
             'lang_code': cls.next_bit_for(bits, 'for'),
+            'openup_suggestions': cls.next_bit_for(bits, 'with'),
+            'user': cls.next_bit_for(bits, 'user'),
             'var_name': cls.next_bit_for(bits, 'as', name),
         }
         return cls(**kwargs)
 
-    def __init__(self, source_entity_id, lang_code, var_name):
+    def __init__(self, source_entity_id, lang_code, openup_suggestions,
+            user, var_name):
         self.source_entity_id = source_entity_id
         self.lang_code = lang_code
         self.var_name = var_name
+        self.openup_suggestions = openup_suggestions
+        self.user = user
 
     def render(self, context):
         # Get values from context
         source_entity_id = self.resolve(self.source_entity_id, context)
         lang_code = self.resolve(self.lang_code, context)
+        openup_suggestions = self.resolve(self.openup_suggestions, context)
+        user = self.resolve(self.user, context)
         
         # Do what's needed to be done
         suggestions = Suggestion.objects.filter(
             source_entity__id=source_entity_id,
             language__code=lang_code).order_by('-score')
+
+        if openup_suggestions and user:
+            suggestions.exclude(user=user)
 
         # Put the result into the context
         context[self.var_name] = suggestions

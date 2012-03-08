@@ -3,7 +3,7 @@
 {% load truncate %}
 {% load suggestions_tags %}
 
-{% get_suggestions source_entity.id for lang_code as suggestions %}
+{% get_suggestions source_entity.id for lang_code with openup_suggestions user request.user as suggestions %}
 
 <link media="screen" href="{% static "suggestions/css/lotte_suggestions.css" %}" type="text/css" rel="stylesheet" />
 
@@ -222,7 +222,7 @@ $(document).ready(function(){
       </div>
       {% endfor %}
   {% endif %}
-
+    {% if not openup_suggestions %}
     <div class="title_line"><span class="title">{% trans "New suggestion" %}</span></div>
     <div class="suggestion_create">
       <div class="suggestion_user">
@@ -237,5 +237,6 @@ $(document).ready(function(){
       </div>
     </div>
   </div>
+  {% endif %}
 
 </div>

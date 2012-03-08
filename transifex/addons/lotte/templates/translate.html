@@ -49,6 +49,11 @@
 <script type="text/javascript">
 
     /* Global variables */
+    {% if openup_suggestions %}
+    var openup_suggestions = true;
+    {% else %}
+    var openup_suggestions = false;
+    {% endif %}
     var autotranslate_url = '{% url autotranslate_proxy project.slug %}';
     var supportedlangs_url = '{% url supported_langs project.slug %}';
     {% if auto_translate %}
@@ -272,11 +277,9 @@
                            + '    <li>'
                            + '     <a class="tabs_trigger show_details" href="#">{% trans "details" %}</a>'
                            + '    </li>'
-                           {% if not openup_suggestions %}
                            + '    <li>'
                            + '     <a class="tabs_trigger show_suggestions" href="#">'+(bold_flag?'<strong>':'')+'{% trans "suggestions" %}'+suggestions_num+(bold_flag?'</strong>':'')+'</a>'
-                           + '    </li>'
-                           {% endif %};
+                           + '    </li>';
                            
                     // Must contain something like: tabs += '<li><a>foo</a></li>'
                     {% hook "tab_lotte.html" tab %}
@@ -927,7 +930,9 @@
     <td id="total_reviewed">{{ reviewed_strings|intcomma }}</td>
     <td id="total_reviewed_perc">?</td>
     <td>
-      <input id="reviewed" class="filters" type="checkbox" name="only_reviewed"/>
+      {% if not openup_suggestions %}
+        <input id="reviewed" class="filters" type="checkbox" name="only_reviewed"/>
+      {% endif %}
     </td>
   </tr>
 
