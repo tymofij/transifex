@@ -90,7 +90,7 @@ class Team(models.Model):
         super(Team, self).save(*args, **kwargs)
         Resource = get_model('resources', 'Resource')
         RLStats = get_model('resources', 'RLStats')
-        res = Resource.objects.filter(Q(project=self.project) | 
+        res = Resource.objects.filter(Q(project=self.project) |
             Q(project__outsource=self.project))
         for r in res:
             RLStats.objects.get_or_create(resource=r, language=self.language)
@@ -117,6 +117,12 @@ class Team(models.Model):
                 self.project.slug, r.slug)
         super(Team, self).delete(*args, **kwargs)
 
+    def all_members(self):
+        return User.objects.filter(
+            Q(team_members__id=self.id) |
+            Q(team_coordinators__id=self.id) |
+            Q(team_reviewers=self.id)
+        ).distinct()
 
 log_model(Team)
 
@@ -186,13 +192,13 @@ class TeamAccessRequest(models.Model):
 log_model(TeamAccessRequest)
 
 
-# FIXME: We could avoid monkey-patches once custom managers on reverse 
+# FIXME: We could avoid monkey-patches once custom managers on reverse
 # relations are supported in Django. https://code.djangoproject.com/ticket/3871
 # Monkey-patching Project class from here to avoid circular dependency problems
 def available_teams(self):
     """
     Return all available teams for the project. If the project outsources its
-    access, then the teams of the 'parent' project will be returned. The 
+    access, then the teams of the 'parent' project will be returned. The
     parameter `self` must be a Project instance.
     """
     return Team.objects.filter(project=self.outsource or self)
