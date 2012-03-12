@@ -260,19 +260,9 @@ def team_detail(request, project_slug, language_code):
         "coordinators": coordinators,
     }, context_instance=RequestContext(request))
 
-@access_off(team_off)
-@one_perm_required_or_403(pr_project_private_perm,
-    (Project, 'slug__exact', 'project_slug'), anonymous_access=True)
-@pjax('teams/_user_profile.html')
-def team_members(request, project_slug, language_code, action=None):
+def _team_members_common_context(request, project_slug, language_code):
     """
-    A 'parent' view that decides if we want to edit or create a team. It gathers
-    the data needed in both views and passes the former to the latter.
-
-    If the request is a pjax one, it will only render the partial that needs
-    to be rendered.
-
-    "It's so complicated it's cool" -- Insheeption, Southpark
+    Gathers content common in team_members_{show, edit, invite}
     """
     username = request.GET.get('username', None)
     project = get_object_or_404(Project.objects.select_related(), slug=project_slug)
@@ -286,44 +276,45 @@ def team_members(request, project_slug, language_code, action=None):
         except User.DoesNotExist:
             pass
 
-    if action == 'show':
-        context_populator = _team_members_show
-    elif action == 'edit':
-        context_populator = _team_members_edit
-    elif action == 'invite':
-        context_populator = _team_members_invite
-    else:
-        raise Http404
-
-    context = {
-        'project': project,
-        'language': language,
-        'team': team,
+    return {
+        'project': project, 'language': language, 'team': team,
         'selected_user': selected_user,
         'next_url': request.get_full_path(),
         'project_team_members': True,
-        'action': action,
     }
 
-    context.update(context_populator(request, context))
-    return TemplateResponse(request, 'teams/team_members.html', context)
+@access_off(team_off)
+@one_perm_required_or_403(pr_project_private_perm,
+    (Project, 'slug__exact', 'project_slug'), anonymous_access=True)
+@pjax('teams/_user_profile.html')
+def team_members_index(request, project_slug, language_code):
+    """
+    Allows everyone to list the members of a team
+    """
+    context = _team_members_common_context(request, project_slug, language_code)
 
-def _team_members_show(request, context):
-    """
-    team_members() context populator.
-    """
     team = context['team']
     if team:
         member_fields = ['username', 'first_name', 'last_name']
         all_members = team.all_members().only(*member_fields)
 
-    return { 'all_members': all_members }
+    context.update({'all_members': all_members, 'action': 'show'})
+    return TemplateResponse(request, 'teams/team_members.html', context)
 
-def _team_members_edit(request, context):
+@access_off(team_off)
+@one_perm_required_or_403(pr_project_private_perm,
+    (Project, 'slug__exact', 'project_slug'), anonymous_access=False)
+@pjax('teams/_user_profile.html')
+def team_members_edit(request, project_slug, language_code):
     """
-    team_members() context populator.
+    Allows maintainers/coordinators to
+    - list the members of their team
+    - accept/reject join requests
+    - unmember members
     """
+    context = _team_members_common_context(request, project_slug, language_code)
     team = context['team']
+
     team_access_requests = None
     user_access_request = None
     all_members = None
@@ -340,20 +331,30 @@ def _team_members_edit(request, context):
         member_fields = ['username', 'first_name', 'last_name']
         all_members = team.all_members().only(*member_fields)
 
-    return {
+    context.update({
         'all_members': all_members,
         'team_access_requests': team_access_requests,
         'user_access_request': user_access_request,
-    }
+        'action': 'edit',
+    })
+    return TemplateResponse(request, 'teams/team_members.html', context)
 
-def _team_members_invite(request, context):
+@access_off(team_off)
+@one_perm_required_or_403(pr_project_private_perm,
+    (Project, 'slug__exact', 'project_slug'), anonymous_access=False)
+@pjax('teams/_user_profile.html')
+def team_members_invite(request, project_slug, language_code):
     """
-    team_members() context populator.
+    Allows maintainers/coordinators to invite translators to their team.
     """
+    context = _team_members_common_context(request, project_slug, language_code)
+
     language = context['language']
     lang_speakers = User.objects.filter(profile__languages__id=language.id)
     lang_speakers = lang_speakers.only('username', 'first_name', 'last_name')
-    return {'lang_speakers': lang_speakers}
+
+    context.update({'lang_speakers': lang_speakers, 'action': 'invite'})
+    return TemplateResponse(request, 'teams/team_members.html', context)
 
 pr_team_delete=(("granular", "project_perm.maintain"),
                 ("general",  "teams.delete_team"),)
