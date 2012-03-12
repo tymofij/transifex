@@ -83,8 +83,8 @@
 
   {% if is_coordinator or is_maintainer %}
     <div id="team_members_sections">
-      <a href="{% url team_members_edit project.slug language.code %}">{% trans "Edit members" %}</a>
-      <a href="{% url team_members_invite project.slug language.code %}">{% trans "Create team" %}</a>
+      <a href="{% url team_members_edit project.slug language.code %}">{% trans "Edit team" %}</a>
+      <a href="{% url team_members_invite project.slug language.code %}">{% trans "Invite members" %}</a>
     </div>
   {% endif %}
 
