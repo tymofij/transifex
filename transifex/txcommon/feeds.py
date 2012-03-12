@@ -22,7 +22,7 @@ class UserFeed(Feed):
     def get_object(self, request, username, url='feed/admin'):
         if not username:
             raise ObjectDoesNotExist
-        return get_object_or_404(User, username__exact=username)
+        return get_object_or_404(User, username__iexact=username)
 
     def title(self, obj):
         return _("Recent activities by %(user)s" % {'user': obj.username })
