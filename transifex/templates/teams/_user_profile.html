@@ -26,7 +26,7 @@ jQuery(document).ready(function() {
       {% if is_coordinator or is_maintainer %}
         {% if selected_user in team.members.all %}
           <div id="action">
-            Unmember
+            <a href="{% url team_members_remove project.slug language.code selected_user.username %}">Remove from team</a>
           </div>
         {% endif %}
       {% endif %}

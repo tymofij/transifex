@@ -272,9 +272,14 @@ def _team_members_common_context(request, project_slug, language_code):
     selected_user = None
     if username:
         try:
-            selected_user = User.objects.get(username=username)
+            selected_user = User.objects.get(username__iexact=username)
         except User.DoesNotExist:
             pass
+
+        # shouldn't allow ../edit?username=moufadios if moufadios not a member
+        if team and selected_user:
+            if not team.members.filter(id=selected_user.id).exists():
+                raise Http404
 
     return {
         'project': project, 'language': language, 'team': team,
@@ -355,6 +360,28 @@ def team_members_invite(request, project_slug, language_code):
 
     context.update({'lang_speakers': lang_speakers, 'action': 'invite'})
     return TemplateResponse(request, 'teams/team_members.html', context)
+
+@access_off(team_off)
+@one_perm_required_or_403(pr_project_private_perm,
+    (Project, 'slug__exact', 'project_slug'), anonymous_access=False)
+@login_required
+def team_members_remove(request, project_slug, language_code, username):
+    """
+    Removes a user from a team.
+    """
+    user = get_object_or_404(User, username__iexact=username)
+    team = get_object_or_404(Team,
+        project__slug__exact=project_slug,
+        language__code__iexact=language_code)
+
+    try:
+        team.members.remove(user)
+        success = True
+    except:
+        success = False
+
+    return HttpResponseRedirect(reverse('team_members_edit',
+        args=(project_slug, language_code,)))
 
 pr_team_delete=(("granular", "project_perm.maintain"),
                 ("general",  "teams.delete_team"),)

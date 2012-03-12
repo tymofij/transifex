@@ -31,6 +31,10 @@ urlpatterns = patterns('',
         view = team_members_invite,
         name = 'team_members_invite',),
     url(
+        regex = TEAM_PARTIAL_URL + r'members/(?P<username>[\.\w-]+)/delete/$',
+        view = team_members_remove,
+        name = 'team_members_remove',),
+    url(
         regex = TEAM_PARTIAL_URL + r'delete/$',
         view = team_delete,
         name = 'team_delete',),
