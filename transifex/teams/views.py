@@ -383,16 +383,29 @@ def team_members_remove(request, project_slug, language_code, username):
         team.members.remove(user)
         msg = _("User %s was removed from team") % username
         messages.success(request, msg)
-    except:
+        error_msg = None
+    except e:
         msg = _("User %s could not be removed from team" % username)
         messages.error(request, msg)
+        error_msg = e.message
 
-    # If you want to add functionality that should be handled by a task queue,
-    # e.g. notification stuff, create a signal and emit it.
-    # Don't pollute the view.
+    team_signals.team_member_removed.send(sender=None,
+        error_msg=error_msg, team=team, user=user)
 
     args = (project_slug, language_code)
     return HttpResponseRedirect(reverse('team_members_edit', args=args))
+
+def _team_members_remove_peripherals(sender, **kwargs):
+    """
+    Handles functionality of team_members_remove() that could be handled by
+    a task queue.
+    """
+    if kwargs['error_msg']:
+        error_msg = "Could not remove %s from team %s: %s" % (
+            kwargs['user'], kwargs['team'], kwargs['error_msg'])
+        logger.error(error_msg)
+
+team_signals.team_member_removed.connect(_team_members_remove_peripherals)
 
 pr_team_delete=(("granular", "project_perm.maintain"),
                 ("general",  "teams.delete_team"),)
