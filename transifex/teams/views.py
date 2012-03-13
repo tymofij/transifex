@@ -374,14 +374,25 @@ def team_members_remove(request, project_slug, language_code, username):
         project__slug__exact=project_slug,
         language__code__iexact=language_code)
 
+    username = '%s' % user.username
+    if user.first_name or user.last_name:
+        full_name = ' '.join([user.first_name, user.last_name]).strip()
+        username += ' (%s)' % full_name
+
     try:
         team.members.remove(user)
-        success = True
+        msg = _("User %s was removed from team") % username
+        messages.success(request, msg)
     except:
-        success = False
+        msg = _("User %s could not be removed from team" % username)
+        messages.error(request, msg)
 
-    return HttpResponseRedirect(reverse('team_members_edit',
-        args=(project_slug, language_code,)))
+    # If you want to add functionality that should be handled by a task queue,
+    # e.g. notification stuff, create a signal and emit it.
+    # Don't pollute the view.
+
+    args = (project_slug, language_code)
+    return HttpResponseRedirect(reverse('team_members_edit', args=args))
 
 pr_team_delete=(("granular", "project_perm.maintain"),
                 ("general",  "teams.delete_team"),)
