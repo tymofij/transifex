@@ -276,11 +276,6 @@ def _team_members_common_context(request, project_slug, language_code):
         except User.DoesNotExist:
             pass
 
-        # shouldn't allow ../edit?username=moufadios if moufadios not a member
-        if team and selected_user:
-            if not team.members.filter(id=selected_user.id).exists():
-                raise Http404
-
     return {
         'project': project, 'language': language, 'team': team,
         'selected_user': selected_user,
@@ -319,6 +314,11 @@ def team_members_edit(request, project_slug, language_code):
     """
     context = _team_members_common_context(request, project_slug, language_code)
     team = context['team']
+
+    # shouldn't allow /edit?username=moufadios if moufadios not a team member
+    if context['team'] and context['selected_user']:
+        if not team.members.filter(id=context['selected_user'].id).exists():
+            raise Http404
 
     team_access_requests = None
     user_access_request = None
