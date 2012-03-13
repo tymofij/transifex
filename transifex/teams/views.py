@@ -522,15 +522,15 @@ def team_join_approve(request, project_slug, language_code, username):
     except IntegrityError, e:
 	transaction.rollback()
         error_msg = e.message
-        
+
     team_signals.team_join_approved.send(sender=None,
         nt='project_team_join_approved',
         context = {'access_request':access_request, 'sender':request.user},
-        project=project, team=team, access_request=access_request, 
+        project=project, team=team, access_request=access_request,
         error_msg=error_msg)
 
     success = False if error_msg else True
-    response = {'user_id':user.id, 'success':success, 'accepted':True} 
+    response = {'user_id':user.id, 'success':success, 'accepted':True}
     return HttpResponse(simplejson.dumps(response))
 
 pr_team_deny_member_perm=(("granular", "project_perm.coordinate_team"),)
@@ -542,8 +542,8 @@ pr_team_deny_member_perm=(("granular", "project_perm.coordinate_team"),)
 @transaction.commit_on_success
 def team_join_deny(request, project_slug, language_code, username):
     if not request.is_ajax() or request.method != "POST":
-		return HttpResponseRedirect(reverse("team_detail", 
-	  		args=[project_slug, language_code]))
+	return HttpResponseRedirect(reverse("team_detail",
+	  args=[project_slug, language_code]))
 
     # we (the cats) can haz ajax post
     team = get_object_or_404(Team, project__slug=project_slug,
@@ -560,7 +560,7 @@ def team_join_deny(request, project_slug, language_code, username):
 	transaction.rollback()
         error_msg = e.message
 
-    team_signals.team_join_denied.send(sender=None, 
+    team_signals.team_join_denied.send(sender=None,
         nt='project_team_join_denied',
         context={
             'access_request':access_request,
@@ -570,13 +570,15 @@ def team_join_deny(request, project_slug, language_code, username):
         error_msg=error_msg)
 
     success = False if error_msg else True
-    response = {'user_id':user.id, 'success':success, 'accepted':False} 
+    response = {'user_id':user.id, 'success':success, 'accepted':False}
     return HttpResponse(simplejson.dumps(response))
 
 def _team_join_action_notify(access_request, project, team, nt, context):
     """
-    Send notifications when a user's request to join a team gets 
-    accepted/rejected
+    Send notifications when a user's request to join a team gets
+    accepted/rejected.
+
+    Called by _team_join_action_peripherals.
     """
     # Send notification for those that are observing this project
     txnotification.send_observation_notices_for(project,
@@ -585,7 +587,7 @@ def _team_join_action_notify(access_request, project, team, nt, context):
     notification.send(set(itertools.chain(project.maintainers.all(),
 	team.coordinators.all(), [access_request.user])), nt, context)
 
-def _team_join_action_handler(sender, **kwargs):
+def _team_join_action_peripherals(sender, **kwargs):
     """
     Takes care of all the tasks that can be forwarded to a task queue.
     """
@@ -605,8 +607,8 @@ def _team_join_action_handler(sender, **kwargs):
     if settings.ENABLE_NOTICES:
        _team_join_action_notify(access_request, project, team, nt, context)
 
-team_signals.team_join_approved.connect(_team_join_action_handler)
-team_signals.team_join_denied.connect(_team_join_action_handler)
+team_signals.team_join_approved.connect(_team_join_action_peripherals)
+team_signals.team_join_denied.connect(_team_join_action_peripherals)
 
 @access_off(team_off)
 @login_required
