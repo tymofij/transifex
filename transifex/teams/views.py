@@ -262,7 +262,7 @@ def team_detail(request, project_slug, language_code):
 
 def _team_members_common_context(request, project_slug, language_code):
     """
-    Gathers content common in team_members_{show, edit, invite}
+    Gathers content common in team_members_{show, edit, whatever}
     """
     username = request.GET.get('username', None)
     project = get_object_or_404(Project.objects.select_related(), slug=project_slug)
@@ -342,23 +342,6 @@ def team_members_edit(request, project_slug, language_code):
         'user_access_request': user_access_request,
         'action': 'edit',
     })
-    return TemplateResponse(request, 'teams/team_members.html', context)
-
-@access_off(team_off)
-@one_perm_required_or_403(pr_project_private_perm,
-    (Project, 'slug__exact', 'project_slug'), anonymous_access=False)
-@pjax('teams/_user_profile.html')
-def team_members_invite(request, project_slug, language_code):
-    """
-    Allows maintainers/coordinators to invite translators to their team.
-    """
-    context = _team_members_common_context(request, project_slug, language_code)
-
-    language = context['language']
-    lang_speakers = User.objects.filter(profile__languages__id=language.id)
-    lang_speakers = lang_speakers.only('username', 'first_name', 'last_name')
-
-    context.update({'lang_speakers': lang_speakers, 'action': 'invite'})
     return TemplateResponse(request, 'teams/team_members.html', context)
 
 @access_off(team_off)
