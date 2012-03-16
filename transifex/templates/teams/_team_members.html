@@ -6,19 +6,35 @@
   <h3 class="header drawer">{% trans "Team members:" %}</h3>
 
   <ul class="list drawer">
-  {% for member in all_members %}
-      <li id="{{ member.id }}" class="user">
-        <a href="{% url team_members_edit project.slug language.code %}?username={{member.username}}" class="user {% if selected_user.username == member.username %}active{% endif %}">
-          {{ member.username }}
-          {% if member.first_name or member.last_name %}
-            <span class="fullname">
-              ({{ member.first_name }} 
-              {{ member.last_name }})
-            </span>
-          {% endif %}
-        </a>
-      </li>
-  {% endfor %}
+    {% if is_coordinator or is_maintainer %}
+      {% for member in all_members %}
+        <li id="{{ member.id }}" class="user">
+          <a href="{% url team_members_edit project.slug language.code %}?username={{member.username}}" class="user {% if selected_user.username == member.username %}active{% endif %}">
+            {{ member.username }}
+            {% if member.first_name or member.last_name %}
+              <span class="fullname">
+                ({{ member.first_name }}
+                {{ member.last_name }})
+              </span>
+            {% endif %}
+          </a>
+        </li>
+      {% endfor %}
+    {% else %}
+      {% for member in all_members %}
+        <li id="{{ member.id }}" class="user">
+          <a href="{% url team_members project.slug language.code %}?username={{member.username}}" class="user {% if selected_user.username == member.username %}active{% endif %}">
+            {{ member.username }}
+            {% if member.first_name or member.last_name %}
+              <span class="fullname">
+                ({{ member.first_name }}
+                {{ member.last_name }})
+              </span>
+            {% endif %}
+          </a>
+        </li>
+      {% endfor %}
+    {% endif %}
   </ul>
 
 </div>
