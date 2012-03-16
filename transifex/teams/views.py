@@ -317,7 +317,7 @@ def team_members_edit(request, project_slug, language_code):
 
     # shouldn't allow /edit?username=moufadios if moufadios not a team member
     if team and context['selected_user']:
-        if not team.members.filter(id=context['selected_user'].id).exists():
+        if not team.all_members().filter(id=context['selected_user'].id).exists():
             raise Http404
 
     team_access_requests = None
