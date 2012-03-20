@@ -34,13 +34,12 @@
       }
     }
 
-    jQuery(document).ready(function() {
-      /* handles the 'drawer' effect */
-      $('a.user').pjax('#user_profile', {
-        timeout: null,
-        error: function(xhr, err) {}
-      });
+    function activate_user(user) {
+      $('a.user').removeClass('active');
+      $(user).addClass('active');
+    }
 
+    jQuery(document).ready(function() {
       /* handles pending list slider */
       jQuery("#pending_list :first").click(function() {
         list_toggle($(this).next());
@@ -49,12 +48,6 @@
       /* handles invite list slider */
       jQuery("#invitation_list :first").click(function() {
         list_toggle($(this).next());
-      });
-
-      /* handles style of clicked users */
-      $('a.user').live('click', function() {
-        $('a.user').removeClass('active');
-        $(this).addClass('active');
       });
     });
   </script>
@@ -87,7 +80,7 @@
 
     <div id="lefty">
       {% if action == 'invite' %}
-        {% hook 'create_team.html' %}
+        {% hook 'invite_members.html' %}
       {% endif %}
 
       {% if action == 'edit' %}

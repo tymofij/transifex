@@ -1,6 +1,20 @@
 {% load i18n %}
 
 {% if all_members %}
+<script type="text/javascript">
+  jQuery(document).ready(function() {
+    /* handles the 'drawer' effect */
+    $('a.user').pjax('#user_profile', {
+      timeout: null,
+      error: function(xhr, err) {}
+    });
+
+    $('a.user').live('click', function() {
+      activate_user($(this));
+    });
+  });
+</script>
+
 <div id="members_list">
 
   <h3 class="header drawer">{% trans "Team members:" %}</h3>
