@@ -9,9 +9,9 @@ def site_section(request):
     Eg. Templates accessed at a URL '/projects/foo/' will have a
     RequestContext processor with ``site_section`` available and equal to
     ['projects', 'foo'].
-    
+
     To access in templates, use something like:
-    
+
     {% if site_section.0 == "projects" %}...
     """
 
