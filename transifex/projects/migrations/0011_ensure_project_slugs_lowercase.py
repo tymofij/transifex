@@ -7,8 +7,10 @@ from django.db.models import F
 
 
 LESS_IMPORTANT_SLUGS = [
-    'easyblog', 'JomSocial', 'joomla', 'kunena', 'magento', 'po', 'prymatex',
-    'testar', 'tryton', 'VirtueMart',
+    'Chyrp', 'Common', 'easyblog', 'eventbooking', 'Helpdesk', 'hwdmediashare',
+    'Invitex', 'JomSocial', 'joomla', 'kunena', 'magento', 'po', 'prymatex',
+    'RedShop', 'sd', 'Test1', 'testar', 'tryton', 'VirtueMart', 'Virtuemart',
+    'VirtueMart',
 ]
 
 class Migration(DataMigration):
@@ -28,13 +30,14 @@ class Migration(DataMigration):
                           "the migration first"
         assert len(qs) == len(LESS_IMPORTANT_SLUGS), assertion_error
         assert [(a.lower(), b.lower()) for a, b in qs] ==\
-                [(a.lower(), a.lower()) for a in LESS_IMPORTANT_SLUGS],\
+               [(a.lower(), a.lower()) for a in LESS_IMPORTANT_SLUGS],\
                 assertion_error
 
         for project in orm['projects.Project'].objects.\
                 filter(slug__in=LESS_IMPORTANT_SLUGS):
-            project.slug = project.slug + '2'
-            project.save()
+            if not project.slug.endswith('_2'):
+                project.slug = project.slug + '_2'
+                project.save()
 
         for project in orm['projects.Project'].objects.all():
             slug_lower = project.slug.lower()
