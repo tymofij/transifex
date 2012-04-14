@@ -132,7 +132,6 @@ class Migration(SchemaMigration):
             'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
             'project': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'resources'", 'null': 'True', 'to': "orm['projects.Project']"}),
             'slug': ('django.db.models.fields.SlugField', [], {'max_length': '50'}),
-            'source_file': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['storage.StorageFile']", 'null': 'True', 'blank': 'True'}),
             'source_language': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['languages.Language']"}),
             'total_entities': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
             'wordcount': ('django.db.models.fields.IntegerField', [], {'default': '0'})

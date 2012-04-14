@@ -12,14 +12,20 @@ class Migration(SchemaMigration):
 
     def forwards(self, orm):
 
-        # Deleting field 'Resource.source_file'
-        db.delete_column('resources_resource', 'source_file_id')
+        try:
+            # Deleting field 'Resource.source_file'
+            db.delete_column('resources_resource', 'source_file_id')
+        except:
+            pass
 
 
     def backwards(self, orm):
 
-        # Adding field 'Resource.source_file'
-        db.add_column('resources_resource', 'source_file', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['storage.StorageFile'], null=True, blank=True), keep_default=False)
+        try:
+            # Adding field 'Resource.source_file'
+            db.add_column('resources_resource', 'source_file', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['storage.StorageFile'], null=True, blank=True), keep_default=False)
+        except:
+            pass
 
 
     models = {

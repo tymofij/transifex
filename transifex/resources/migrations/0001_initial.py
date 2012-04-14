@@ -8,7 +8,6 @@ class Migration(SchemaMigration):
 
     depends_on = (
         ("projects", "0001_initial"),
-        # ("storage", "0001_initial"),
         ("languages", "0001_initial"),
     )
 
@@ -19,7 +18,6 @@ class Migration(SchemaMigration):
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
             ('slug', self.gf('django.db.models.fields.SlugField')(max_length=50, db_index=True)),
             ('name', self.gf('django.db.models.fields.CharField')(max_length=255)),
-            ('source_file', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['storage.StorageFile'], null=True, blank=True)),
             ('i18n_type', self.gf('django.db.models.fields.CharField')(max_length=20)),
             ('accept_translations', self.gf('django.db.models.fields.BooleanField')(default=True)),
             ('created', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, blank=True)),
@@ -192,7 +190,6 @@ class Migration(SchemaMigration):
             'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
             'project': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'resources'", 'null': 'True', 'to': "orm['projects.Project']"}),
             'slug': ('django.db.models.fields.SlugField', [], {'max_length': '50', 'db_index': 'True'}),
-            'source_file': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['storage.StorageFile']", 'null': 'True', 'blank': 'True'}),
             'source_language': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['languages.Language']"})
         },
         'resources.sourceentity': {
@@ -230,19 +227,6 @@ class Migration(SchemaMigration):
             'string_hash': ('django.db.models.fields.CharField', [], {'max_length': '32'}),
             'user': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['auth.User']", 'null': 'True'})
         },
-        'storage.storagefile': {
-            'Meta': {'object_name': 'StorageFile'},
-            'bound': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'language': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['languages.Language']", 'null': 'True'}),
-            'mime_type': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '1024'}),
-            'size': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'total_strings': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'user': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['auth.User']", 'null': 'True'}),
-            'uuid': ('django.db.models.fields.CharField', [], {'max_length': '1024'})
-        }
     }
 
     complete_apps = ['resources']
