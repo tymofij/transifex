@@ -579,8 +579,7 @@ def update_translation(request, project_slug, resource_slug, lang_code=None):
         lang_code = request.POST.get('language_code', None)
     target_language = get_object_or_404(Language, code=lang_code)
     project = resource.project
-    # Get the team if exists to use it for permissions and links
-    team = Team.objects.get_or_none(project, lang_code)
+    team = Team.objects.fetch_or_create(project, target_language, request.user)
 
     check = ProjectPermission(request.user)
     if (not check.submit_translations(team or resource.project) or\
