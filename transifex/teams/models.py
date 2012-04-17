@@ -21,6 +21,20 @@ class TeamManager(models.Manager):
         except Team.DoesNotExist:
             return None
 
+    def fetch_or_create(self, project, language, creator):
+        """
+        get_or_create wrapper
+        On create, the creator is added to the coordinator list.
+        """
+        team, create = self.get_or_create(
+            project=project,
+            language=language,
+            creator=creator
+        )
+        if create:
+            team.coordinators.add(creator)
+        return team
+
     def public(self):
         return self.filter(project__private=False)
 
@@ -83,7 +97,7 @@ class Team(models.Model):
         super(Team, self).save(*args, **kwargs)
         Resource = get_model('resources', 'Resource')
         RLStats = get_model('resources', 'RLStats')
-        res = Resource.objects.filter(Q(project=self.project) | 
+        res = Resource.objects.filter(Q(project=self.project) |
             Q(project__outsource=self.project))
         for r in res:
             RLStats.objects.get_or_create(resource=r, language=self.language)
@@ -179,13 +193,13 @@ class TeamAccessRequest(models.Model):
 log_model(TeamAccessRequest)
 
 
-# FIXME: We could avoid monkey-patches once custom managers on reverse 
+# FIXME: We could avoid monkey-patches once custom managers on reverse
 # relations are supported in Django. https://code.djangoproject.com/ticket/3871
 # Monkey-patching Project class from here to avoid circular dependency problems
 def available_teams(self):
     """
     Return all available teams for the project. If the project outsources its
-    access, then the teams of the 'parent' project will be returned. The 
+    access, then the teams of the 'parent' project will be returned. The
     parameter `self` must be a Project instance.
     """
     return Team.objects.filter(project=self.outsource or self)
