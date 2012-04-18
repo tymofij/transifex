@@ -100,28 +100,24 @@
       <span style="color:#aaa;">{% trans "(source language)"%}</span>
     {% else %}
       {% if not project.anyone_submit %}
-        {% if stat.object.code in available_teams_codes %}
-          {% with stat.object.code as lang_code %}
-            {% with teams|getitem:lang_code as team_counts %}
-              {% get_permission "project_perm.coordinate_team" for request.user and project,stat.object as "is_coordinator" %}
-              {% if team_counts.0 %}
-              {% if is_maintainer or is_coordinator %}
-                <a href="{% if project.outsource %} {% url team_members project.outsource.slug lang_code %} {% else %}{% url team_members project.slug lang_code %}{% endif %}" style="color:#999;">
-                  <span>
-                    {% blocktrans count counter=team_counts.0 %}
-                        ({{ counter }} join request)
-                    {% plural %}
-                        ({{ counter }} join requests)
-                    {% endblocktrans %}
-                  </span>
-                </a>
-              {% endif %}
-              {% endif %}
-            {% endwith %}
+        {% with stat.object.code as lang_code %}
+          {% with teams|getitem:lang_code as team_counts %}
+            {% get_permission "project_perm.coordinate_team" for request.user and project,stat.object as "is_coordinator" %}
+            {% if team_counts.0 %}
+            {% if is_maintainer or is_coordinator %}
+              <a href="{% if project.outsource %} {% url team_members project.outsource.slug lang_code %} {% else %}{% url team_members project.slug lang_code %}{% endif %}" style="color:#999;">
+                <span>
+                  {% blocktrans count counter=team_counts.0 %}
+                      ({{ counter }} join request)
+                  {% plural %}
+                      ({{ counter }} join requests)
+                  {% endblocktrans %}
+                </span>
+              </a>
+            {% endif %}
+            {% endif %}
           {% endwith %}
-        {% else %}
-        <span style="color:#aaa;">{% trans "(no team yet)" %}</span>
-        {% endif %}
+        {% endwith %}
       {% endif %}
     {% endif %}
     </td>
