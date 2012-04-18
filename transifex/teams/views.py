@@ -11,7 +11,7 @@ from django.db import IntegrityError
 from django.db import transaction
 from django.db.models import Q, Sum
 from django.dispatch import Signal
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.http import Http404
@@ -32,6 +32,7 @@ from transifex.txcommon import notifications as txnotification
 from transifex.txcommon.decorators import one_perm_required_or_403, access_off
 from transifex.txcommon.log import logger
 
+import simplejson
 
 def team_off(request, project, *args, **kwargs):
     """
@@ -78,6 +79,14 @@ def update_team_request(team):
         team_request.delete()
     except TeamRequest.DoesNotExist, e:
         pass
+
+def create_empty_team(request, project_slug, language_code):
+    project = get_object_or_404(Project, slug=project_slug)
+    language = get_object_or_404(Language, code=language_code)
+    team, is_new = Team.objects.fetch_or_create(project, language, request.user)
+
+    response = simplejson.dumps({'ok': bool(team)})
+    return HttpResponse(response)
 
 def _team_create_update(request, project_slug, language_code=None, extra_context=None):
     """
