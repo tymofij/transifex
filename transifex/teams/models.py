@@ -26,14 +26,14 @@ class TeamManager(models.Manager):
         get_or_create wrapper
         On create, the creator is added to the coordinator list.
         """
-        team, create = self.get_or_create(
+        team, is_new = self.get_or_create(
             project=project,
             language=language,
             creator=creator
         )
-        if create:
+        if is_new:
             team.coordinators.add(creator)
-        return team
+        return (team, is_new)
 
     def public(self):
         return self.filter(project__private=False)
