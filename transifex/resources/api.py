@@ -1058,7 +1058,7 @@ class TranslationHandler(BaseHandler):
                     "language in the database." % lang_code
                 )
         project, creator = resource.project, request.user
-        team = Team.objects.fetch_or_create(project, language, creator)
+        team, is_new = Team.objects.fetch_or_create(project, language, creator)
         check = ProjectPermission(request.user)
         if source_push and not check.maintain(resource.project):
             return rc.FORBIDDEN
