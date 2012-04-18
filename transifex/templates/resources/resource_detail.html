@@ -25,7 +25,16 @@
           var translate_url_tmpl = '{% url translate_resource resource.project.slug resource.slug 111111111 %}'
 
           if ( target_lang_code != "" ) {
-              window.location = translate_url_tmpl.replace('111111111', target_lang_code);
+              url = "{% url create_empty_team resource.project.slug 'das_plazholderz' %}";
+              url = url.replace('das_plazholderz', target_lang_code)
+              jQuery.post(url, function(data) {
+                  data = JSON.parse(data);
+                  if (data['ok']) {
+                      window.location = translate_url_tmpl.replace('111111111', target_lang_code);
+                  } else {
+                      return;
+                  }
+              });
           } else {
               alert('{% trans "Please select a target language first."|escapejs %}');
           }
