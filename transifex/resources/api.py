@@ -1033,6 +1033,7 @@ class TranslationHandler(BaseHandler):
             translation, res
         )
 
+    @transaction.commit_on_success
     def _update(self, request, project_slug, resource_slug, lang_code=None):
         # Permissions handling
         try:
@@ -1056,8 +1057,8 @@ class TranslationHandler(BaseHandler):
                     "Selected language code (%s) does not match with any"
                     "language in the database." % lang_code
                 )
-
-        team = Team.objects.get_or_none(resource.project, lang_code)
+        project, creator = resource.project, request.user
+        team = Team.objects.fetch_or_create(project, language, creator)
         check = ProjectPermission(request.user)
         if source_push and not check.maintain(resource.project):
             return rc.FORBIDDEN
