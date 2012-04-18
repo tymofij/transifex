@@ -11,6 +11,10 @@ urlpatterns = patterns('',
         view = team_create,
         name = 'team_create',),
     url(
+        regex = TEAM_PARTIAL_URL + r'add/$',
+        view = create_empty_team,
+        name = 'create_empty_team',),
+    url(
         regex = TEAM_PARTIAL_URL + r'edit/$',
         view = team_update,
         name = 'team_update',),
