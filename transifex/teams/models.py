@@ -121,7 +121,7 @@ class Team(models.Model):
         return User.objects.filter(
             Q(team_members__id=self.id) |
             Q(team_coordinators__id=self.id) |
-            Q(team_reviewers=self.id)
+            Q(team_reviewers__id=self.id)
         ).distinct()
 
 log_model(Team)
