@@ -307,12 +307,21 @@ def _team_members_common_context(request, project_slug, language_code):
     language = get_object_or_404(Language.objects.select_related(), code=language_code)
     team = Team.objects.get_or_none(project, language.code)
 
+    member_type = None
     selected_user = None
+
     if username:
         try:
             selected_user = User.objects.get(username__iexact=username)
         except User.DoesNotExist:
             pass
+        else:
+            if selected_user in team.members.all():
+                member_type = 'translator'
+            elif selected_user in team.reviewers.all():
+                member_type = 'reviewer'
+            elif selected_user in team.coordinators.all():
+                member_type = 'coordinator'
 
     return {
         'project': project, 'language': language, 'team': team,
@@ -320,6 +329,7 @@ def _team_members_common_context(request, project_slug, language_code):
         'next_url': request.get_full_path(),
         'next_url_clean': re.sub(r'\?[^?]*$', '', request.get_full_path()),
         'project_team_members': True,
+        'member_type': member_type,
     }
 
 @access_off(team_off)
