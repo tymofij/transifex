@@ -12,6 +12,14 @@
     $('a.user').live('click', function() {
       activate_user($(this));
     });
+
+    filter_links = jQuery('#filters a');
+
+    jQuery.each(filter_links, function() {
+      if ($(this).attr('data-filter') == '{{ filter }}') {
+        $(this).addClass('active');
+      }
+    });
   });
 </script>
 
@@ -19,10 +27,10 @@
 
   <h3 class="header drawer">{% trans "Team members:" %}</h3>
 
-  <ul>
-    <li><a href="{{ next_url_clean }}">All</a></li>
-    <li><a href="{{ next_url_clean }}?filter=coordinators">Coordinators</a></li>
-    <li><a href="{{ next_url_clean }}?filter=reviewers">Reviewers</a></li>
+  <ul id="filters">
+    <li><a href='{{ current_url_clean }}?filter=' data-filter=''>All</a></li>
+    <li><a href='{{ current_url_clean }}?filter=coordinators' data-filter='coordinators'>Coordinators</a></li>
+    <li><a href='{{ current_url_clean }}?filter=reviewers' data-filter='reviewers'>Reviewers</a></li>
   </ul>
 
   <ul class="list drawer">
