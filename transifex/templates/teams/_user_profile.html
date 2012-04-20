@@ -19,7 +19,7 @@ jQuery(document).ready(function() {
     jQuery.post(url, function(data) {
         data = JSON.parse(data);
         if (data['success']) {
-            jQuery("a.js-change_member_type").removeClass('active');
+            jQuery("a.js-change-member-type").removeClass('active');
             clicked_link.addClass('active');
         }
     });
@@ -40,14 +40,17 @@ jQuery(document).ready(function() {
 
           <div id="action">
           {% if is_coordinator or is_maintainer %}
+            {% if request.user != selected_user %}
+                <a href="{% url team_members_remove project.slug language.code selected_user.username %}" class="buttonized fixedw">Remove from team</a>
+            {% endif %}
             <ul class="modify-rank">
-              <li><a href='' data-member-type='translator' class="js-change_member_type">Translator</a></li>
-              <li><a href='' data-member-type='reviewer' class="js-change_member_type">Reviewer</a></li>
+              <li><a href='' data-member-type='translator' class="js-change-member-type">Translator</a></li>
+              <li><a href='' data-member-type='reviewer' class="js-change-member-type">Reviewer</a></li>
               {% if is_maintainer  %}
-                <li><a href='' data-member-type='coordinator' class="js-change_member_type">Coordinator</a></li>
+                <li><a href='' data-member-type='coordinator' class="js-change-member-type">Coordinator</a></li>
               {% endif %}
             </ul>
-            
+
             {% if request.user != selected_user %}
                 <a href="{% url team_members_remove project.slug language.code selected_user.username %}" class="buttonized fixedw" style="width:100px;">Remove</a>
             {% endif %}
@@ -99,6 +102,5 @@ jQuery(document).ready(function() {
       </ul>
     {% endif %}
   </div>
-
 
 {% endif %}
