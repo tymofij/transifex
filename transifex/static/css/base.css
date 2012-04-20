@@ -325,7 +325,9 @@ background-image: linear-gradient(top, #959595 0%, #7a7a7a 100%);}
 #drawerbox .header-drawer h3{color: #fff;text-shadow:#444 1px 1px 0px;font-size: 0.923em;float: left;margin:0;}
 #drawerbox .header-drawer .drawer-filters{float: right;margin:0;}
 #drawerbox .header-drawer .drawer-filters li{float: left; clear: right;margin-right: 8px;line-height: 1em;}
-#drawerbox .header-drawer .drawer-filters li a{color: #fff;font-size: 11px;margin: 0;}
+#drawerbox .header-drawer .drawer-filters li a{color: #aaa;font-size: 11px;margin: 0;}
+#drawerbox .header-drawer .drawer-filters li a.active{color: #fff;}
+#drawerbox .header-drawer .drawer-filters li a:hover{color: #fff;text-decoration: none;}
 
 #lefty .drawerli{padding: 12px 5px;font-size: 1em; color: #999;border-bottom: 1px solid #e1e1e1;}
 
@@ -340,7 +342,7 @@ background-image: linear-gradient(top, #959595 0%, #7a7a7a 100%);}
 #drawerbox #lefty{font-size: 1.077em;}
 #drawerbox ul.drawer li{}
 
-#drawerbox  ul.drawer li a{border-bottom: 1px solid #e1e1e1;border-top:1px solid #fff;padding: 14px 5px;display: block;border-left: 1px solid #e1e1e1;border-right:1px solid #e1e1e1;background-color: #f5f5f5;color: #555;}
+#drawerbox  ul.drawer li a:not(.buttonized){border-bottom: 1px solid #e1e1e1;border-top:1px solid #fff;padding: 14px 5px;display: block;border-left: 1px solid #e1e1e1;border-right:1px solid #e1e1e1;background-color: #f5f5f5;color: #555;}
 #drawerbox ul.drawer li a:hover{text-decoration: none;background-color: #fafafa;}
 #drawerbox ul.drawer li a.active{color: #3D658D;font-weight: bold;border-right: none;background-color:transparent;border-left:4px solid #3D658D;padding-left: 10px;}
 #drawerbox ul.drawer li a.active:hover{text-decoration: none;}
