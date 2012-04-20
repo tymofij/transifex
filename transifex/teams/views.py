@@ -316,12 +316,12 @@ def _team_members_common_context(request, project_slug, language_code):
         except User.DoesNotExist:
             pass
         else:
-            if selected_user in team.members.all():
-                member_type = 'translator'
+            if selected_user in team.coordinators.all():
+                member_type = 'coordinator'
             elif selected_user in team.reviewers.all():
                 member_type = 'reviewer'
-            elif selected_user in team.coordinators.all():
-                member_type = 'coordinator'
+            elif selected_user in team.members.all():
+                member_type = 'translator'
 
     return {
         'project': project, 'language': language, 'team': team,

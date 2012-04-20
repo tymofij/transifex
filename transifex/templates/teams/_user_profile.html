@@ -6,9 +6,17 @@
 <script type="text/javascript">
 
 jQuery(document).ready(function() {
-  $('a[rel*=facebox]').facebox()
+  $('a[rel*=facebox]').facebox();
 
-  jQuery("a.js-change_member_type").unbind("click").on("click", function() {
+  member_types = jQuery("a.js-change-member-type");
+
+  jQuery.each(member_types, function() {
+    if ($(this).attr('data-member-type') == '{{ member_type }}') {
+      $(this).addClass('active');
+    };
+  });
+
+  member_types.unbind("click").on("click", function() {
     clicked_link = $(this);
     member_type = $(this).attr('data-member-type');
     /* BE CAREFUL: 'translator' acts as a placeholder for the actual member
