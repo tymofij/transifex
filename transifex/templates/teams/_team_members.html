@@ -14,12 +14,17 @@
     });
 
     filter_links = jQuery('#filters a');
+    active_filter = '{{ filter }}';
 
-    jQuery.each(filter_links, function() {
-      if ($(this).attr('data-filter') == '{{ filter }}') {
-        $(this).addClass('active');
-      }
-    });
+    if (active_filter == 'None') {
+      jQuery("#filters a[data-filter='']").addClass('active');
+    } else {
+      jQuery.each(filter_links, function() {
+        if ($(this).attr('data-filter') == active_filter) {
+          $(this).addClass('active');
+        }
+      });
+    }
   });
 </script>
 
