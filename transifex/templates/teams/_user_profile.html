@@ -59,10 +59,6 @@ jQuery(document).ready(function() {
               {% endif %}
             </ul>
 
-            {% if request.user != selected_user %}
-                <a href="{% url team_members_remove project.slug language.code selected_user.username %}" class="buttonized fixedw" style="width:100px;">Remove</a>
-            {% endif %}
-
           {% endif %}
           {% if request.user == selected_user %}
              <form style="float:right;diplay:inline" method="post" action="{% url team_leave team.project.slug team.language.code %}">{% csrf_token %}
