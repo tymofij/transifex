@@ -75,10 +75,12 @@ jQuery(document).ready(function() {
 </script>
 
 <div id="pending_list">
+  
+  <div class="header-drawer clearfix">
+    <h3 class="header">{% blocktrans count cnt=team_access_requests|length %}The following user wants to join{% plural %}The following users want to join{% endblocktrans %}</h3>
+  </div>
 
-  <h3 class="header">{% blocktrans count cnt=team_access_requests|length %}The following user wants to join{% plural %}The following users want to join{% endblocktrans %}</h3>
-
-  <ul class="list collapsed">
+  <ul class="list drawer collapsed">
     {% for access_request in team_access_requests|dictsort:"user.username"%}  
       {% with u=access_request.user %}
       <li id="request_{{ access_request.user.id }}">

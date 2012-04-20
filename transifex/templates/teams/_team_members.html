@@ -25,13 +25,14 @@
 
 <div id="members_list">
 
-  <h3 class="header drawer">{% trans "Team members:" %}</h3>
-
-  <ul id="filters">
-    <li><a href='{{ current_url_clean }}?filter=' data-filter=''>All</a></li>
-    <li><a href='{{ current_url_clean }}?filter=coordinators' data-filter='coordinators'>Coordinators</a></li>
-    <li><a href='{{ current_url_clean }}?filter=reviewers' data-filter='reviewers'>Reviewers</a></li>
-  </ul>
+  <div class="header-drawer clearfix">
+    <h3>{% trans "Team members:" %}</h3>  
+    <ul id="filters" class="drawer-filters nomargin">
+      <li><a href='{{ current_url_clean }}?filter=' data-filter=''>All</a></li>
+      <li><a href='{{ current_url_clean }}?filter=coordinators' data-filter='coordinators'>Coordinators</a></li>
+      <li><a href='{{ current_url_clean }}?filter=reviewers' data-filter='reviewers'>Reviewers</a></li>
+    </ul>
+  </div>
 
   <ul class="list drawer">
     {% if is_coordinator or is_maintainer %}
