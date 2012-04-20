@@ -327,10 +327,22 @@ def _team_members_common_context(request, project_slug, language_code):
         'project': project, 'language': language, 'team': team,
         'selected_user': selected_user,
         'next_url': request.get_full_path(),
-        'next_url_clean': re.sub(r'\?[^?]*$', '', request.get_full_path()),
+        'current_url_clean': re.sub(r'\?[^?]*$', '', request.get_full_path()),
         'project_team_members': True,
         'member_type': member_type,
     }
+
+def _filter_members(team, members_filter):
+    """
+    Isolating member filtering functionality.
+    """
+    if not members_filter:
+        members = team.all_members()
+    elif members_filter == 'coordinators':
+        members = team.coordinators.all()
+    elif members_filter == 'reviewers':
+        members = team.reviewers.all()
+    return members
 
 @access_off(team_off)
 @one_perm_required_or_403(pr_project_private_perm,
@@ -347,20 +359,12 @@ def team_members_index(request, project_slug, language_code):
     members = members.only('username', 'first_name', 'last_name')
     members = members.order_by('username')
 
-    context.update({'members': members, 'action': 'show'})
+    context.update({
+        'members': members,
+        'filter': members_filter,
+        'action': 'show',
+    })
     return TemplateResponse(request, 'teams/team_members.html', context)
-
-def _filter_members(team, members_filter):
-    """
-    Isolating member filtering functionality.
-    """
-    if members_filter == None:
-        members = team.all_members()
-    elif members_filter == 'coordinators':
-        members = team.coordinators.all()
-    elif members_filter == 'reviewers':
-        members = team.reviewers.all()
-    return members
 
 @access_off(team_off)
 @one_perm_required_or_403(pr_project_private_perm,
@@ -399,6 +403,7 @@ def team_members_edit(request, project_slug, language_code):
         'team_access_requests': team_access_requests,
         'user_access_request': user_access_request,
         'action': 'edit',
+        'filter': members_filter,
     })
     return TemplateResponse(request, 'teams/team_members.html', context)
 
