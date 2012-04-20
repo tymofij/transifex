@@ -85,7 +85,7 @@
 
       {% if action == 'show' or action == 'edit' %}
         {% if members %}
-          {% autopaginate members 15 %}
+          {% autopaginate members 13 %}
           {% include 'teams/_team_members.html' %}
           {% paginate %}
         {% endif %}
