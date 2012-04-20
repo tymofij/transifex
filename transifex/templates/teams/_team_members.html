@@ -1,6 +1,5 @@
 {% load i18n %}
 
-{% if members %}
 <script type="text/javascript">
   jQuery(document).ready(function() {
     /* handles the 'drawer' effect */
@@ -31,7 +30,7 @@
 <div id="members_list">
 
   <div class="header-drawer clearfix">
-    <h3>{% trans "Team members:" %}</h3>  
+    <h3>{% trans "Team members:" %}</h3>
     <ul id="filters" class="drawer-filters nomargin">
       <li><a href='{{ current_url_clean }}?filter=' data-filter=''>All</a></li>
       <li><a href='{{ current_url_clean }}?filter=coordinators' data-filter='coordinators'>Coordinators</a></li>
@@ -39,32 +38,35 @@
     </ul>
   </div>
 
-  <ul class="list drawer">
-    {% if is_coordinator or is_maintainer %}
-      {% for member in members %}
-        <li id="{{ member.id }}" class="user">
-          <a href="{% url team_members_edit project.slug language.code %}?username={{member.username}}" class="user {% if selected_user.username == member.username %}active{% endif %}">
-            {{ member.username }}
-            {% if member.first_name or member.last_name %}
-              (<span class="fullname">{{ member.get_full_name }}</span>)
-            {% endif %}
-          </a>
-        </li>
-      {% endfor %}
-    {% else %}
-      {% for member in members %}
-        <li id="{{ member.id }}" class="user">
-          <a href="{% url team_members project.slug language.code %}?username={{member.username}}" class="user {% if selected_user.username == member.username %}active{% endif %}">
-            {{ member.username }}
-            {% if member.first_name or member.last_name %}
-              (<span class="fullname">{{ member.get_full_name }}</span>)
-            {% endif %}
-          </a>
-        </li>
-      {% endfor %}
-    {% endif %}
-  </ul>
+  {% if members %}
+    <ul class="list drawer">
+      {% if is_coordinator or is_maintainer %}
+        {% for member in members %}
+          <li id="{{ member.id }}" class="user">
+            <a href="{% url team_members_edit project.slug language.code %}?username={{member.username}}" class="user {% if selected_user.username == member.username %}active{% endif %}">
+              {{ member.username }}
+              {% if member.first_name or member.last_name %}
+                (<span class="fullname">{{ member.get_full_name }}</span>)
+              {% endif %}
+            </a>
+          </li>
+        {% endfor %}
+      {% else %}
+        {% for member in members %}
+          <li id="{{ member.id }}" class="user">
+            <a href="{% url team_members project.slug language.code %}?username={{member.username}}" class="user {% if selected_user.username == member.username %}active{% endif %}">
+              {{ member.username }}
+              {% if member.first_name or member.last_name %}
+                (<span class="fullname">{{ member.get_full_name }}</span>)
+              {% endif %}
+            </a>
+          </li>
+        {% endfor %}
+      {% endif %}
+    </ul>
+  {% else %}
+    <p>No {% if filter %}{{ filter }}{% else %}members{% endif %} in this team.</p>
+  {% endif %}
 
 </div>
 
-{% endif %}
