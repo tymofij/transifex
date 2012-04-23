@@ -263,6 +263,10 @@ def team_detail(request, project_slug, language_code):
     }, context_instance=RequestContext(request))
 
 @transaction.commit_on_success
+@one_perm_required_or_403((('granular', 'project_perm.coordinate_team'),),
+    (Project, 'slug__exact', 'project_slug'),
+    (Language, 'code__exact', 'language_code'))
+@login_required
 @require_POST
 def change_member_type(request, project_slug, language_code, username, member_type):
     """
@@ -345,8 +349,6 @@ def _filter_members(team, members_filter):
     return members
 
 @access_off(team_off)
-@one_perm_required_or_403(pr_project_private_perm,
-    (Project, 'slug__exact', 'project_slug'), anonymous_access=True)
 @pjax('teams/_user_profile.html')
 def team_members_index(request, project_slug, language_code):
     """
@@ -367,9 +369,11 @@ def team_members_index(request, project_slug, language_code):
     return TemplateResponse(request, 'teams/team_members.html', context)
 
 @access_off(team_off)
-@one_perm_required_or_403(pr_project_private_perm,
-    (Project, 'slug__exact', 'project_slug'), anonymous_access=False)
 @pjax('teams/_user_profile.html')
+@one_perm_required_or_403((('granular', 'project_perm.coordinate_team'),),
+    (Project, 'slug__exact', 'project_slug'),
+    (Language, 'code__exact', 'language_code'))
+@login_required
 def team_members_edit(request, project_slug, language_code):
     """
     Allows maintainers/coordinators to
@@ -408,8 +412,9 @@ def team_members_edit(request, project_slug, language_code):
     return TemplateResponse(request, 'teams/team_members.html', context)
 
 @access_off(team_off)
-@one_perm_required_or_403(pr_project_private_perm,
-    (Project, 'slug__exact', 'project_slug'), anonymous_access=False)
+@one_perm_required_or_403((('granular', 'project_perm.coordinate_team'),),
+    (Project, 'slug__exact', 'project_slug'),
+    (Language, 'code__exact', 'language_code'))
 @login_required
 def team_members_remove(request, project_slug, language_code, username):
     """
@@ -558,18 +563,16 @@ def team_join_request(request, project_slug, language_code):
                                         args=[project_slug, language_code]))
 
 
-
-pr_team_add_member_perm=(("granular", "project_perm.coordinate_team"),)
-@access_off(team_off)
-@login_required
-@one_perm_required_or_403(pr_team_add_member_perm,
-    (Project, "slug__exact", "project_slug"),
-    (Language, "code__exact", "language_code"))
 @transaction.commit_on_success
+@access_off(team_off)
+@one_perm_required_or_403((('granular', 'project_perm.coordinate_team'),),
+    (Project, 'slug__exact', 'project_slug'),
+    (Language, 'code__exact', 'language_code'))
+@login_required
 def team_join_approve(request, project_slug, language_code, username):
     if not request.is_ajax() or request.method != "POST":
-		return HttpResponseRedirect(reverse("team_detail",
-	  		args=[project_slug, language_code]))
+        args = [project_slug, language_code]
+        return HttpResponseRedirect(reverse("team_detail", args=args))
 
     # we can haz ajax post
     team = get_object_or_404(Team, project__slug=project_slug,
@@ -600,17 +603,16 @@ def team_join_approve(request, project_slug, language_code, username):
     response = {'user_id':user.id, 'success':success, 'accepted':True}
     return HttpResponse(simplejson.dumps(response))
 
-pr_team_deny_member_perm=(("granular", "project_perm.coordinate_team"),)
-@access_off(team_off)
-@login_required
-@one_perm_required_or_403(pr_team_deny_member_perm,
-    (Project, "slug__exact", "project_slug"),
-    (Language, "code__exact", "language_code"))
 @transaction.commit_on_success
+@access_off(team_off)
+@one_perm_required_or_403((('granular', 'project_perm.coordinate_team'),),
+    (Project, 'slug__exact', 'project_slug'),
+    (Language, 'code__exact', 'language_code'))
+@login_required
 def team_join_deny(request, project_slug, language_code, username):
     if not request.is_ajax() or request.method != "POST":
-	return HttpResponseRedirect(reverse("team_detail",
-	  args=[project_slug, language_code]))
+        args = [project_slug, language_code]
+	return HttpResponseRedirect(reverse("team_detail", args=args))
 
     # we (the cats) can haz ajax post
     team = get_object_or_404(Team, project__slug=project_slug,
