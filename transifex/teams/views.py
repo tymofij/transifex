@@ -387,9 +387,6 @@ def team_members_edit(request, project_slug, language_code):
     members_filter = request.GET.get('filter', None)
     team = context['team']
 
-    if request.is_ajax() and not request.META.get('HTTP_X_PJAX', False):
-        return TemplateResponse(request, 'teams/_user_profile.html', context)
-
     team_access_requests = TeamAccessRequest.objects.filter(team__pk=team.pk)
     if request.user.is_authenticated():
         rel_manager = request.user.teamaccessrequest_set
@@ -408,6 +405,9 @@ def team_members_edit(request, project_slug, language_code):
         'action': 'edit',
         'filter': members_filter,
     })
+
+    if request.is_ajax() and not request.META.get('HTTP_X_PJAX', False):
+        return TemplateResponse(request, 'teams/_user_profile.html', context)
     return TemplateResponse(request, 'teams/team_members.html', context)
 
 @access_off(team_off)
