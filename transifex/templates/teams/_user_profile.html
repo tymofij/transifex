@@ -8,26 +8,26 @@
 jQuery(document).ready(function() {
   $('a[rel*=facebox]').facebox();
 
-  member_types = jQuery("a.js-change-member-type");
+  membership_types = jQuery("a.js-convert-membership-type");
 
-  jQuery.each(member_types, function() {
-    if ($(this).attr('data-member-type') == '{{ member_type }}') {
+  jQuery.each(membership_types, function() {
+    if ($(this).attr('data-membership-type') == '{{ membership_type }}') {
       $(this).addClass('active');
     };
   });
 
-  member_types.unbind("click").live("click", function() {
+  membership_types.unbind("click").live("click", function() {
     clicked_link = $(this);
-    member_type = $(this).attr('data-member-type');
+    membership_type = $(this).attr('data-membership-type');
     /* BE CAREFUL: 'translator' acts as a placeholder for the actual member
      * type. See urls.py (hint: regexp 'or') */
-    url = "{% url change_member_type project.slug language.code selected_user 'translator' %}";
-    url = url.replace(/translator\/$/, member_type + '/');
+    url = "{% url convert_membership_type project.slug language.code selected_user 'translator' %}";
+    url = url.replace(/translator\/$/, membership_type + '/');
 
     jQuery.post(url, function(data) {
         data = JSON.parse(data);
         if (data['success']) {
-            jQuery("a.js-change-member-type").removeClass('active');
+            jQuery("a.js-convert-membership-type").removeClass('active');
             clicked_link.addClass('active');
         }
     });
@@ -47,11 +47,9 @@ jQuery(document).ready(function() {
     {% if action == 'edit' %}
        {% if is_coordinator or is_maintainer %}
          <ul class="modify-rank">
-           <li><a href='' data-member-type='translator' class="js-change-member-type">Translator</a></li>
-           <li><a href='' data-member-type='reviewer' class="js-change-member-type">Reviewer</a></li>
-           {% if is_maintainer  %}
-             <li><a href='' data-member-type='coordinator' class="js-change-member-type">Coordinator</a></li>
-           {% endif %}
+           <li><a href='' data-membership-type='translator' class="js-convert-membership-type">Translator</a></li>
+           <li><a href='' data-membership-type='reviewer' class="js-convert-membership-type">Reviewer</a></li>
+           <li><a href='' data-membership-type='coordinator' class="js-convert-membership-type">Coordinator</a></li>
          </ul>
          {% if request.user != selected_user %}
              <a href="{% url team_members_remove project.slug language.code selected_user.username %}" class="buttonized fixedw">Remove from team</a>

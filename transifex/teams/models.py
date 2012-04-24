@@ -124,6 +124,18 @@ class Team(models.Model):
             Q(team_reviewers__id=self.id)
         ).distinct()
 
+    def membership_type(self, user):
+        """
+        Returns the membership type of user regarding the current team (self).
+        """
+        coordinators = self.coordinators
+        reviewers = self.reviewers
+        user_id = user.id
+
+        return 'translator' if self.members.filter(id=user_id).exists() else \
+               'coordinator' if coordinators.filter(id=user_id).exists() else \
+               'reviewer' if reviewers.filter(id=user_id).exists() else None
+
 log_model(Team)
 
 

@@ -268,7 +268,8 @@ def team_detail(request, project_slug, language_code):
     (Language, 'code__exact', 'language_code'))
 @login_required
 @require_POST
-def change_member_type(request, project_slug, language_code, username, member_type):
+def convert_membership_type(request, project_slug, language_code,
+                            username, member_type):
     """
     Switch 'member type' from the current one to
     - coordinator
@@ -308,7 +309,7 @@ def _team_members_common_context(request, project_slug, language_code):
     language = get_object_or_404(Language.objects.select_related(), code=language_code)
     team = Team.objects.get_or_none(project, language.code)
 
-    member_type = None
+    membership_type = None
     selected_user = None
 
     if username:
@@ -317,12 +318,7 @@ def _team_members_common_context(request, project_slug, language_code):
         except User.DoesNotExist:
             pass
         else:
-            if selected_user in team.coordinators.all():
-                member_type = 'coordinator'
-            elif selected_user in team.reviewers.all():
-                member_type = 'reviewer'
-            elif selected_user in team.members.all():
-                member_type = 'translator'
+            membership_type = team.membership_type(selected_user)
 
     return {
         'project': project, 'language': language, 'team': team,
@@ -330,7 +326,7 @@ def _team_members_common_context(request, project_slug, language_code):
         'next_url': request.get_full_path(),
         'current_url_clean': re.sub(r'\?[^?]*$', '', request.get_full_path()),
         'project_team_members': True,
-        'member_type': member_type,
+        'membership_type': membership_type,
     }
 
 def _filter_members(team, members_filter):
