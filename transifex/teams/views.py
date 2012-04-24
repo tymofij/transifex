@@ -431,13 +431,16 @@ def team_members_remove(request, project_slug, language_code, username):
 
     try:
         team.members.remove(user)
-        msg = _("User %s was removed from team") % username
-        messages.success(request, msg)
-        error_msg = None
+        team.reviewers.remove(user)
+        team.coordinators.remove(user)
     except e:
         msg = _("User %s could not be removed from team" % username)
         messages.error(request, msg)
         error_msg = e.message
+    else:
+        msg = _("User %s was removed from team") % username
+        messages.success(request, msg)
+        error_msg = None
 
     team_signals.team_member_removed.send(sender=None,
         error_msg=error_msg, team=team, user=user)
@@ -587,10 +590,11 @@ def team_join_approve(request, project_slug, language_code, username):
 	team.members.add(user)
 	team.save()
 	access_request.delete()
-        error_msg = None
     except IntegrityError, e:
 	transaction.rollback()
         error_msg = e.message
+    else:
+        error_msg = None
 
     team_signals.team_join_approved.send(sender=None,
         nt='project_team_join_approved',
@@ -623,10 +627,11 @@ def team_join_deny(request, project_slug, language_code, username):
 
     try:
 	access_request.delete()
-        error_msg = None
     except IntegrityError, e:
 	transaction.rollback()
         error_msg = e.message
+    else:
+        error_msg = None
 
     team_signals.team_join_denied.send(sender=None,
         nt='project_team_join_denied',
