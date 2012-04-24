@@ -49,6 +49,23 @@
       jQuery("#invitation_list :first").click(function() {
         list_toggle($(this).next());
       });
+
+      $('.pagination a').pjax('#js-paginated-list', {
+        timeout: null,
+        error: function(xhr, err) {}
+      });
+
+      $('a.user').live('click', function(event) {
+        event.preventDefault();
+        activate_user(this);
+
+        jQuery.get($(this).attr('href'), function(data) {
+          $("#js-user-profile").html(data);
+        });
+
+        return false;
+      });
+
     });
     $('a[rel*=facebox]').facebox()
   </script>
@@ -84,24 +101,24 @@
       {% endif %}
 
       {% if action == 'show' or action == 'edit' %}
-          {% autopaginate members 11 %}
-          {% include 'teams/_team_members.html' %}
-          {% paginate %}
+          <div id="js-paginated-list" data-name="team-members">
+            {% include 'teams/_team_members.html' %}
+          </div>
       {% endif %}
     </div>
 
     <div id="righty">
-      <div id="user_profile">
+      <div id="js-user-profile">
         {% include "teams/_user_profile.html" %}
       </div>
     </div>
 
   </div>
-  
+
   <div>
     <p class="i16 infomsg">{% blocktrans %}Please note that notification will not be sent when coordinators or members are added or removed on this page.{% endblocktrans %}</p>
   </div>
-  
+
 </div>
 
 <div class="delete-section">
@@ -111,7 +128,7 @@
   <div class="separate-header clearfix">
     <h3  class="sh-label">{% trans "Delete language-team" %}</h3>
   </div>
-    
+
   <p style="margin-bottom:1em;">{% trans "Do you wish to delete the team?" %}</p>
   <p style="margin-top:2em;"><a class="i16 delete buttonized" rel='facebox' href="#js-delete-team-confirm">{% trans "Delete language" %}</a>
   </p>

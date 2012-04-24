@@ -16,7 +16,7 @@ jQuery(document).ready(function() {
     };
   });
 
-  member_types.unbind("click").on("click", function() {
+  member_types.unbind("click").live("click", function() {
     clicked_link = $(this);
     member_type = $(this).attr('data-member-type');
     /* BE CAREFUL: 'translator' acts as a placeholder for the actual member

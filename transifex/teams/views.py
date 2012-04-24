@@ -349,7 +349,7 @@ def _filter_members(team, members_filter):
     return members
 
 @access_off(team_off)
-@pjax('teams/_user_profile.html')
+@pjax('teams/_team_members.html')
 def team_members_index(request, project_slug, language_code):
     """
     Allows everyone to list the members of a team
@@ -366,10 +366,12 @@ def team_members_index(request, project_slug, language_code):
         'filter': members_filter,
         'action': 'show',
     })
+
+    if request.is_ajax() and not request.META.get('HTTP_X_PJAX', False):
+        return TemplateResponse(request, 'teams/_user_profile.html', context)
     return TemplateResponse(request, 'teams/team_members.html', context)
 
-@access_off(team_off)
-@pjax('teams/_user_profile.html')
+@pjax('teams/_team_members.html')
 @one_perm_required_or_403((('granular', 'project_perm.coordinate_team'),),
     (Project, 'slug__exact', 'project_slug'),
     (Language, 'code__exact', 'language_code'))
@@ -385,11 +387,8 @@ def team_members_edit(request, project_slug, language_code):
     members_filter = request.GET.get('filter', None)
     team = context['team']
 
-    # shouldn't allow /edit?username=moufadios if moufadios not a team member
-    if context['selected_user']:
-        kwargs = { 'id': context['selected_user'].id }
-        if not team.all_members().filter(**kwargs).exists():
-            raise Http404
+    if request.is_ajax() and not request.META.get('HTTP_X_PJAX', False):
+        return TemplateResponse(request, 'teams/_user_profile.html', context)
 
     team_access_requests = TeamAccessRequest.objects.filter(team__pk=team.pk)
     if request.user.is_authenticated():
