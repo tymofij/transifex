@@ -280,10 +280,7 @@ def change_member_type(request, project_slug, language_code, username, member_ty
         project__slug__exact=project_slug,
         language__code__iexact=language_code)
 
-    request_by_maintainer = team.project.maintainers.filter(
-        id=request.user.id).exists()
     success = True
-
     if member_type == 'translator':
         team.coordinators.remove(user)
         team.reviewers.remove(user)
@@ -292,7 +289,7 @@ def change_member_type(request, project_slug, language_code, username, member_ty
         team.members.remove(user)
         team.coordinators.remove(user)
         team.reviewers.add(user)
-    elif member_type == 'coordinator' and request_by_maintainer:
+    elif member_type == 'coordinator':
         team.reviewers.remove(user)
         team.members.remove(user)
         team.coordinators.add(user)
@@ -424,10 +421,7 @@ def team_members_remove(request, project_slug, language_code, username):
         project__slug__exact=project_slug,
         language__code__iexact=language_code)
 
-    username = '%s' % user.username
-    if user.first_name or user.last_name:
-        full_name = ' '.join([user.first_name, user.last_name]).strip()
-        username += ' (%s)' % full_name
+    username = '%s (%s)' % (user.username, user.get_full_name())
 
     try:
         team.members.remove(user)
