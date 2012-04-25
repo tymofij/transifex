@@ -121,7 +121,7 @@ class Compiler(object):
 
     def _get_source_strings(self):
         """Return the source strings of the resource."""
-        return SourceEntity.objects.filter(
+        return SourceEntity.objects.using('readonly').filter(
             resource=self.resource
         ).values_list(
             'id', 'string_hash', 'pluralized'

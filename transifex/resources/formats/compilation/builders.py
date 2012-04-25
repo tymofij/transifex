@@ -44,7 +44,7 @@ class TranslationsBuilder(object):
         Args:
             The ids to fetch source strings for.
         """
-        return Translation.objects.filter(
+        return Translation.objects.using('readonly').filter(
             source_entity__in=ids, language=self.resource.source_language
         ).values_list(*self._fields).order_by()
 
@@ -77,7 +77,7 @@ class AllTranslationsBuilder(TranslationsBuilder):
         """Get the translation strings that match the specified
         source_entities.
         """
-        translations = Translation.objects.filter(
+        translations = Translation.objects.using('readonly').filter(
             resource=self.resource, language=self.language
         ).values_list(*self._fields).order_by().iterator()
         return self._output(translations)
@@ -101,7 +101,7 @@ class ReviewedTranslationsBuilder(TranslationsBuilder):
         """Get the translation strings that match the specified source_entities
         and have been reviewed.
         """
-        translations = Translation.objects.filter(
+        translations = Translation.objects.using('readonly').filter(
             reviewed=True, resource=self.resource, language=self.language
         ).values_list(*self._fields).order_by().iterator()
         return self._output(translations)
@@ -115,10 +115,10 @@ class SourceTranslationsBuilder(TranslationsBuilder):
         source entities. Use the source strings for the missing
         ones.
         """
-        translations = Translation.objects.filter(
+        translations = Translation.objects.using('readonly').filter(
             resource=self.resource, language=self.language
         ).values_list(*self._fields).order_by()
-        source_entities = set(SourceEntity.objects.filter(
+        source_entities = set(SourceEntity.objects.using('readonly').filter(
                 resource=self.resource
         ).values_list('id', flat=True).order_by())
         missing_ids = source_entities - set(map(lambda x: x[0], translations))
@@ -140,10 +140,10 @@ class ReviewedSourceTranslationsBuilder(TranslationsBuilder):
         source entities. Use the source strings for the missing
         ones.
         """
-        translations = Translation.objects.filter(
+        translations = Translation.objects.using('readonly').filter(
             reviewed=True, resource=self.resource, language=self.language
         ).values_list(*self._fields).order_by()
-        source_entities = set(SourceEntity.objects.filter(
+        source_entities = set(SourceEntity.objects.using('readonly').filter(
                 resource=self.resource
         ).values_list('id', flat=True).order_by())
         missing_ids = source_entities - set(map(lambda x: x[0], translations))
@@ -176,8 +176,7 @@ class MarkedSourceTranslationsBuilder(_MarkSourceMixin,
 
 
 class ReviewedMarkedSourceTranslationsBuilder(
-    _MarkSourceMixin, ReviewedSourceTranslationsBuilder
-):
+    _MarkSourceMixin, ReviewedSourceTranslationsBuilder):
     """Mark the source strings, so that the compiler knows how to
     handle those.
     """
