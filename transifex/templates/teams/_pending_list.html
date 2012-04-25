@@ -23,10 +23,10 @@ function hide_handled_request(request_li, accepted, delay) {
 function handle_handled_request_li(request_li, accepted, delay) {
   if (accepted) {
     request_li.removeClass("join_accepted");
-    $("#members_list ul").prepend(request_li);
+    $("ul#members_list").prepend(request_li);
     request_li.fadeIn(delay);
     request_li.children().each(function() {
-      if ($(this).is("form")) {
+      if ($(this).attr('id') == 'accept_reject_buttons') {
         $(this).remove();
       }
     });
@@ -40,7 +40,7 @@ function handle_handled_request_li(request_li, accepted, delay) {
  */
 function _request_response_handler(data, delay) {
   data = JSON.parse(data);
-  /* les poulos */
+  /* los poulos */
   if (!data['success']) {
     return;
   }
@@ -88,10 +88,10 @@ jQuery(document).ready(function() {
         {{ u.username }}
         {% if u.first_name or u.last_name %}
           <span class="fullname">({{ u.first_name }} {{ u.last_name }})</span>
-        </a>
         {% endif %}
+        </a>
         {% if is_coordinator %}
-        <span style="float:right;position:relative;top:-38px;right:10px;">
+        <span id="accept_reject_buttons" style="float:right;position:relative;top:-38px;right:10px;">
           <form class="microform" method="post" action="{% url team_join_approve project.slug language.code u.username %}">{% csrf_token %}
             <input name="team_join_approve" class="i16 submit buttonized blist" type="submit" value="{% trans "Accept" %}"/>
           </form>

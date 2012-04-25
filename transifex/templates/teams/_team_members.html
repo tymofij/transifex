@@ -20,7 +20,7 @@
 
 {% autopaginate members 11 %}
 
-<div id="members_list">
+<div id="members">
 
   <div class="header-drawer ui-corner-top clearfix">
     <h3>{% trans "Team members" %}</h3>
@@ -32,7 +32,7 @@
   </div>
 
   {% if members %}
-    <ul class="list drawer">
+    <ul id="members_list" class="list drawer">
       {% if is_coordinator or is_maintainer %}
         {% for member in members %}
           <li id="{{ member.id }}" class="user">
