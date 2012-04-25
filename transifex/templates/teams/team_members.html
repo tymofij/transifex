@@ -19,36 +19,12 @@
 
 {% block extrajs %}
   <script type="text/javascript">
-    /*
-     * Used to slide down or up a list of members.
-     *
-     * header: the jquery .previous() div of the list to be slided.
-     */
-    function list_toggle(list) {
-      if (list.hasClass("collapsed")) {
-        list.slideUp();
-        list.removeClass("collapsed");
-      } else {
-        list.slideDown();
-        list.addClass("collapsed");
-      }
-    }
-
     function activate_user(user) {
       $('a.user').removeClass('active');
       $(user).addClass('active');
     }
 
     jQuery(document).ready(function() {
-      /* handles pending list slider */
-      jQuery("#pending_list :first").click(function() {
-        list_toggle($(this).next());
-      });
-
-      /* handles invite list slider */
-      jQuery("#invitation_list :first").click(function() {
-        list_toggle($(this).next());
-      });
 
       $('.pagination a').pjax('#js-paginated-list', {
         timeout: null,
