@@ -324,22 +324,10 @@ def _team_members_common_context(request, project_slug, language_code):
         'project': project, 'language': language, 'team': team,
         'selected_user': selected_user,
         'next_url': request.get_full_path(),
-        'current_url_clean': re.sub(r'\?[^?]*$', '', request.get_full_path()),
         'project_team_members': True,
         'membership_type': membership_type,
     }
 
-def _filter_members(team, members_filter):
-    """
-    Isolating member filtering functionality.
-    """
-    if not members_filter:
-        members = team.all_members()
-    elif members_filter == 'coordinators':
-        members = team.coordinators.all()
-    elif members_filter == 'reviewers':
-        members = team.reviewers.all()
-    return members
 
 @access_off(team_off)
 @pjax('teams/_team_members.html')
@@ -348,16 +336,11 @@ def team_members_index(request, project_slug, language_code):
     Allows everyone to list the members of a team
     """
     context = _team_members_common_context(request, project_slug, language_code)
-    members_filter = request.GET.get('filter', None)
-
-    members = _filter_members(context['team'], members_filter)
-    members = members.only('username', 'first_name', 'last_name')
-    members = members.order_by('username')
-
     context.update({
-        'members': members,
-        'filter': members_filter,
-        'action': 'show',
+        'coordinators': context['team'].coordinators.order_by('username'),
+        'reviewers': context['team'].reviewers.order_by('username'),
+        'members': context['team'].members.order_by('username'),
+        'action':'show',
     })
 
     if request.is_ajax() and not request.META.get('HTTP_X_PJAX', False):
@@ -377,7 +360,6 @@ def team_members_edit(request, project_slug, language_code):
     - unmember members
     """
     context = _team_members_common_context(request, project_slug, language_code)
-    members_filter = request.GET.get('filter', None)
     team = context['team']
 
     team_access_requests = TeamAccessRequest.objects.filter(team__pk=team.pk)
@@ -387,16 +369,13 @@ def team_members_edit(request, project_slug, language_code):
     else:
         user_access_request = None
 
-    members = _filter_members(context['team'], members_filter)
-    members = members.only('username', 'first_name', 'last_name')
-    members = members.order_by('username')
-
     context.update({
-        'members': members,
+        'coordinators': context['team'].coordinators.order_by('username'),
+        'reviewers': context['team'].reviewers.order_by('username'),
+        'members': context['team'].members.order_by('username'),
         'team_access_requests': team_access_requests,
         'user_access_request': user_access_request,
         'action': 'edit',
-        'filter': members_filter,
     })
 
     if request.is_ajax() and not request.META.get('HTTP_X_PJAX', False):
