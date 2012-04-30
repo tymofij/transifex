@@ -7,7 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.contenttypes.models import ContentType
 from django.contrib import messages
 from django.core.urlresolvers import reverse
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_GET
 from django.db import IntegrityError
 from django.db import transaction
 from django.db.models import Q, Sum
@@ -321,16 +321,29 @@ def _team_members_common_context(request, project_slug, language_code):
             membership_type = team.membership_type(selected_user)
 
     return {
-        'project': project, 'language': language, 'team': team,
+        'project': project,
+        'language': language,
+        'team': team,
         'selected_user': selected_user,
         'next_url': request.get_full_path(),
         'project_team_members': True,
         'membership_type': membership_type,
     }
 
+def _team_members_template(request):
+    if not request.is_ajax():
+        template = 'teams/team_members.html'
+    elif request.GET.get('user', False):
+        template = 'teams/_user_profile.html'
+    elif request.GET.get('more', False):
+        template = 'teams/_team_members.html'
+    else:
+        raise Http404
+
+    return template
 
 @access_off(team_off)
-@pjax('teams/_team_members.html')
+@require_GET
 def team_members_index(request, project_slug, language_code):
     """
     Allows everyone to list the members of a team
@@ -342,16 +355,14 @@ def team_members_index(request, project_slug, language_code):
         'members': context['team'].members.order_by('username'),
         'action':'show',
     })
+    template = _team_members_template(request)
+    return TemplateResponse(request, template, context)
 
-    if request.is_ajax() and not request.META.get('HTTP_X_PJAX', False):
-        return TemplateResponse(request, 'teams/_user_profile.html', context)
-    return TemplateResponse(request, 'teams/team_members.html', context)
-
-@pjax('teams/_team_members.html')
 @one_perm_required_or_403((('granular', 'project_perm.coordinate_team'),),
     (Project, 'slug__exact', 'project_slug'),
     (Language, 'code__exact', 'language_code'))
 @login_required
+@required_GET
 def team_members_edit(request, project_slug, language_code):
     """
     Allows maintainers/coordinators to
@@ -378,9 +389,8 @@ def team_members_edit(request, project_slug, language_code):
         'action': 'edit',
     })
 
-    if request.is_ajax() and not request.META.get('HTTP_X_PJAX', False):
-        return TemplateResponse(request, 'teams/_user_profile.html', context)
-    return TemplateResponse(request, 'teams/team_members.html', context)
+    template = _team_members_template(request)
+    return TemplateResponse(request, template, context)
 
 @access_off(team_off)
 @one_perm_required_or_403((('granular', 'project_perm.coordinate_team'),),
