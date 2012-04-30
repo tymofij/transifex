@@ -349,12 +349,19 @@ def team_members_index(request, project_slug, language_code):
     Allows everyone to list the members of a team
     """
     context = _team_members_common_context(request, project_slug, language_code)
+
+    if (context['team'].project.maintainers.filter(id=request.user.id).exists() or
+      context['team'].coordinators.filter(id=request.user.id).exists()):
+        args = (project_slug, language_code)
+        return HttpResponseRedirect(reverse('team_members_edit', args=args))
+
     context.update({
         'coordinators': context['team'].coordinators.order_by('username'),
         'reviewers': context['team'].reviewers.order_by('username'),
         'members': context['team'].members.order_by('username'),
         'action':'show',
     })
+
     template = _team_members_template(request)
     return TemplateResponse(request, template, context)
 
