@@ -1,6 +1,6 @@
 {% load i18n %}
 
-{% if is_coordinator or is_maintainer %}
+{% if can_coordinate %}
   {% for member in members %}
     <li id="{{ member.id }}" class="user {{ membership }}">
       <a href="{% url team_members_edit project.slug language.code %}?username={{member.username}}" class="user {% if selected_user.username == member.username %}active{% endif %}">

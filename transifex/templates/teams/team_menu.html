@@ -64,16 +64,16 @@
 
 {% block header_menu %}
 
-{% get_permission "project_perm.coordinate_team" for request.user and project,language as "is_coordinator" %}
-{% get_permission "project_perm.maintain" for request.user and project as "is_maintainer" %}
-
 {% if not project.anyone_submit %}
 <div id="teamcode-arrow"><div id="teamcode">{{ language.code }}</div><span></span></div>
 <div class="tab-wrapper grid_10">
   <ul  class="tabs clearfix">
     <li class="{% if project_team_page %}selected{% endif %}"><a href="{% url team_detail project.slug language.code %}">{% trans "Overview" %}</a></li>
     {% hook "team.html" menu %}
-    <li class="{% if project_team_members or project_team_form %}selected{% endif %} alpha"><a href="{% if is_maintainer or is_coordinator %}{% url team_members_edit project.slug language.code %}{% else %}{% url team_members project.slug language.code %}{% endif %}">{% trans "Language-team" %}</a></li>
+    {% if can_coordinate %}
+        <li class="{% if project_team_members or project_team_form %}selected{% endif %} alpha"><a href="{% url team_members_edit project.slug language.code %}">{% trans "Edit language team" %}</a></li>
+    {% else %}
+        <li class="{% if project_team_members or project_team_form %}selected{% endif %} alpha"><a href="{% url team_members_index project.slug language.code %}">{% trans "Language team" %}</a></li>
     {% endif %}
   </ul>
 </div>

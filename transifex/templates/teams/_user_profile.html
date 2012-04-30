@@ -37,15 +37,12 @@ jQuery(document).ready(function() {
 
 </script>
 
-{% get_permission "project_perm.coordinate_team" for request.user and project,language as "is_coordinator" %}
-{% get_permission "project_perm.maintain" for request.user and project as "is_maintainer" %}
-
 {% if selected_user %}
   {% include "teams/_user_profile_id.html" with user=selected_user %}
 
   <div id="actions" class="clearfix">
     {% if action == 'edit' %}
-       {% if is_coordinator or is_maintainer %}
+       {% if can_coordinate %}
          <ul class="modify-rank">
            <li><a href='' data-membership-type='translator' class="js-convert-membership-type">Translator</a></li>
            <li><a href='' data-membership-type='reviewer' class="js-convert-membership-type">Reviewer</a></li>
@@ -67,7 +64,7 @@ jQuery(document).ready(function() {
 
     {% if action == 'invite' %}
       <div id="action">
-        {% if is_coordinator or is_maintainer %}
+        {% if can_coordinate %}
           {% hook "add_to_invitation_list.html" %}
         {% endif %}
       </div>

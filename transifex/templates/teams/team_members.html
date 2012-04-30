@@ -49,8 +49,6 @@
 {% endblock%}
 
 {% block content_main %}
-{% get_permission "project_perm.submit_translations" for request.user and team as "can_submit_translations" %}
-{% get_permission "project_perm.coordinate_team" for request.user and project,language as "is_coordinator" %}
 {% get_permission "project_perm.maintain" for request.user and project as "is_maintainer" %}
 
 <div class="obj_bigdetails clearfix" style="margin-top:1em;">
@@ -65,7 +63,7 @@
       {% endif %}
 
       {% if action == 'edit' %}
-        {% if is_coordinator or is_maintainer %}
+        {% if can_coordinate %}
           {% include 'teams/_pending_list.html' %}
         {% endif %}
       {% endif %}
@@ -113,7 +111,6 @@
 
 <div class="delete-section">
 {% if team %}
-  {% get_permission "project_perm.maintain" for request.user and project as "is_maintainer" %}
   {% if perms.teams.delete_team or is_maintainer %}
   <div class="separate-header clearfix">
     <h3  class="sh-label">{% trans "Delete language-team" %}</h3>

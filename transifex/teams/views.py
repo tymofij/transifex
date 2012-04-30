@@ -2,6 +2,7 @@
 import copy
 import itertools
 from django.conf import settings
+from authority.views import permission_denied
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.contrib.contenttypes.models import ContentType
@@ -27,6 +28,7 @@ from transifex.languages.models import Language
 from notification import models as notification
 from transifex.projects.models import Project
 from transifex.projects.permissions import *
+from transifex.projects.permissions.project import ProjectPermission
 from transifex.projects.signals import pre_team_request, pre_team_join, ClaNotSignedError
 from transifex.resources.models import RLStats, Resource
 from transifex.teams.forms import TeamSimpleForm, TeamRequestSimpleForm, ProjectsFilterForm
@@ -306,8 +308,11 @@ def _team_members_common_context(request, project_slug, language_code):
     """
     username = request.GET.get('username', None)
     project = get_object_or_404(Project.objects.select_related(), slug=project_slug)
-    language = get_object_or_404(Language.objects.select_related(), code=language_code)
+    language = Language.objects.by_code_or_alias_or_404(language_code)
     team = Team.objects.get_or_none(project, language.code)
+
+    check = ProjectPermission(request.user)
+    can_coordinate = check.coordinate_team(project, language)
 
     membership_type = None
     selected_user = None
@@ -328,6 +333,7 @@ def _team_members_common_context(request, project_slug, language_code):
         'next_url': request.get_full_path(),
         'project_team_members': True,
         'membership_type': membership_type,
+        'can_coordinate': can_coordinate,
     }
 
 def _team_members_template(request):
@@ -350,8 +356,7 @@ def team_members_index(request, project_slug, language_code):
     """
     context = _team_members_common_context(request, project_slug, language_code)
 
-    if (context['team'].project.maintainers.filter(id=request.user.id).exists() or
-      context['team'].coordinators.filter(id=request.user.id).exists()):
+    if context['can_coordinate']:
         args = (project_slug, language_code)
         return HttpResponseRedirect(reverse('team_members_edit', args=args))
 
@@ -361,13 +366,9 @@ def team_members_index(request, project_slug, language_code):
         'members': context['team'].members.order_by('username'),
         'action':'show',
     })
-
     template = _team_members_template(request)
     return TemplateResponse(request, template, context)
 
-@one_perm_required_or_403((('granular', 'project_perm.coordinate_team'),),
-    (Project, 'slug__exact', 'project_slug'),
-    (Language, 'code__exact', 'language_code'))
 @login_required
 @require_GET
 def team_members_edit(request, project_slug, language_code):
@@ -378,9 +379,13 @@ def team_members_edit(request, project_slug, language_code):
     - unmember members
     """
     context = _team_members_common_context(request, project_slug, language_code)
-    team = context['team']
 
+    if not context['can_coordinate']:
+        return permission_denied(request)
+
+    team = context['team']
     team_access_requests = TeamAccessRequest.objects.filter(team__pk=team.pk)
+
     if request.user.is_authenticated():
         rel_manager = request.user.teamaccessrequest_set
         user_access_request = rel_manager.filter(team__pk=team.pk)
