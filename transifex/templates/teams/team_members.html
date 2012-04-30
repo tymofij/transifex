@@ -1,7 +1,6 @@
 {% extends "teams/team_menu.html" %}
 {% load i18n %}
 {% load cache %}
-{% load pagination_tags %}
 {% load txcommontags %}
 {% load permissions %}
 {% load txpermissions %}
@@ -26,16 +25,11 @@
 
     jQuery(document).ready(function() {
 
-      $('.pagination a').pjax('#js-paginated-list', {
-        timeout: null,
-        error: function(xhr, err) {}
-      });
-
       $('a.user').live('click', function(event) {
         event.preventDefault();
         activate_user(this);
 
-        jQuery.get($(this).attr('href'), function(data) {
+        jQuery.get($(this).attr('href'), {user: true}, function(data) {
           $("#js-user-profile").html(data);
         });
 
@@ -77,15 +71,35 @@
       {% endif %}
 
       {% if action == 'show' or action == 'edit' %}
-          <div id="js-paginated-list" data-name="team-members">
-            {% include 'teams/_team_members.html' %}
+        <div id="members" data-name="team-members">
+          <div class="header-drawer ui-corner-top clearfix">
+            <h3>{% trans "Team members" %}</h3>
           </div>
+
+          {% if members or reviewers or coordinators %}
+            <ul id="members_list" class="list drawer">
+              {% with coordinators as members %}
+                {% include 'teams/_team_members.html' with membership='coordinator' %}
+              {% endwith %}
+              {% with reviewers as members %}
+                {% include 'teams/_team_members.html' with membership='reviewer' %}
+              {% endwith %}
+              {% with members as members %}
+                {% include 'teams/_team_members.html' with membership='translator' %}
+              {% endwith %}
+            </ul>
+          {% else %}
+            <p>No participants in this team.</p>
+          {% endif %}
+        </div>
       {% endif %}
     </div>
 
     <div id="righty">
       <div id="js-user-profile">
-        {% include "teams/_user_profile.html" %}
+        {% if selected_user %}
+            {% include "teams/_user_profile.html" %}
+        {% endif %}
       </div>
     </div>
 
