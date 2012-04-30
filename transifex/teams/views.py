@@ -364,7 +364,7 @@ def team_members_index(request, project_slug, language_code):
         'coordinators': context['team'].coordinators.order_by('username'),
         'reviewers': context['team'].reviewers.order_by('username'),
         'members': context['team'].members.order_by('username'),
-        'action':'show',
+        'action': 'show',
     })
     template = _team_members_template(request)
     return TemplateResponse(request, template, context)
