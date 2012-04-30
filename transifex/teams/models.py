@@ -117,13 +117,6 @@ class Team(models.Model):
                 self.project.slug, r.slug)
         super(Team, self).delete(*args, **kwargs)
 
-    def all_members(self):
-        return User.objects.filter(
-            Q(team_members__id=self.id) |
-            Q(team_coordinators__id=self.id) |
-            Q(team_reviewers__id=self.id)
-        ).distinct()
-
     def membership_type(self, user):
         """
         Returns the membership type of user regarding the current team (self).
