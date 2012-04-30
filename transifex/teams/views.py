@@ -362,7 +362,7 @@ def team_members_index(request, project_slug, language_code):
     (Project, 'slug__exact', 'project_slug'),
     (Language, 'code__exact', 'language_code'))
 @login_required
-@required_GET
+@require_GET
 def team_members_edit(request, project_slug, language_code):
     """
     Allows maintainers/coordinators to
