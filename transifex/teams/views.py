@@ -515,7 +515,6 @@ def team_join_request(request, project_slug, language_code):
         try:
             # send pre_team_join signal
             cla_sign = 'cla_sign' in request.POST and request.POST['cla_sign']
-            cla_sign = cla_sign and True
             pre_team_join.send(sender='join_team_view', project=project,
                                user=request.user, cla_sign=cla_sign)
 
