@@ -105,7 +105,7 @@ def _team_create_update(request, project_slug, language_code=None, extra_context
         except Team.DoesNotExist:
             pass
 
-    if request.POST:
+    if request.method == 'POST':
         form = TeamSimpleForm(project, language, request.POST, instance=team)
         form.data["creator"] = request.user.pk
         if form.is_valid():
@@ -507,7 +507,7 @@ def team_join_request(request, project_slug, language_code):
         language__code=language_code)
     project = team.project
 
-    if request.POST:
+    if request.method == 'POST':
         if request.user in team.members.all() or \
             request.user in team.coordinators.all():
             messages.warning(request,
@@ -686,7 +686,7 @@ def team_join_withdraw(request, project_slug, language_code):
     access_request = get_object_or_404(TeamAccessRequest, team__pk=team.pk,
         user__pk=request.user.pk)
 
-    if request.POST:
+    if request.method == 'POST':
         try:
             access_request.delete()
             messages.success(request,_(
@@ -729,7 +729,7 @@ def team_leave(request, project_slug, language_code):
         language__code=language_code)
     project = team.project
 
-    if request.POST:
+    if request.method == 'POST':
         try:
             if (team.members.filter(username=request.user.username).exists() or
                 team.reviewers.filter(username=request.user.username).exists()):
@@ -777,7 +777,7 @@ def team_leave(request, project_slug, language_code):
 @transaction.commit_on_success
 def team_request(request, project_slug):
 
-    if request.POST:
+    if request.method == 'POST':
         language_pk = request.POST.get('language', None)
         if not language_pk:
             messages.error(request, _(
@@ -861,7 +861,7 @@ def team_request_approve(request, project_slug, language_code):
         language__code=language_code)
     project = team_request.project
 
-    if request.POST:
+    if request.method == 'POST':
         try:
             team = Team(project=team_request.project,
                 language=team_request.language, creator=request.user)
@@ -910,7 +910,7 @@ def team_request_deny(request, project_slug, language_code):
         language__code=language_code)
     project = team_request.project
 
-    if request.POST:
+    if request.method == 'POST':
         try:
             team_request.delete()
             messages.success(request, _(
