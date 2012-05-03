@@ -561,8 +561,9 @@ def team_join_request(request, project_slug, language_code):
     (Project, 'slug__exact', 'project_slug'),
     (Language, 'code__exact', 'language_code'))
 @login_required
+@require_POST
 def team_join_approve(request, project_slug, language_code, username):
-    if not request.is_ajax() or request.method != "POST":
+    if not request.is_ajax():
         args = [project_slug, language_code]
         return HttpResponseRedirect(reverse("team_detail", args=args))
 
@@ -602,8 +603,9 @@ def team_join_approve(request, project_slug, language_code, username):
     (Project, 'slug__exact', 'project_slug'),
     (Language, 'code__exact', 'language_code'))
 @login_required
+@require_POST
 def team_join_deny(request, project_slug, language_code, username):
-    if not request.is_ajax() or request.method != "POST":
+    if not request.is_ajax():
         args = [project_slug, language_code]
 	return HttpResponseRedirect(reverse("team_detail", args=args))
 
