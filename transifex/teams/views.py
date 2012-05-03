@@ -302,11 +302,50 @@ def convert_membership_type(request, project_slug, language_code,
     response = simplejson.dumps({'success': success})
     return HttpResponse(response)
 
+def _team_members_selected_user(request, team=None):
+    """
+    Returns the user specified by GET['username'], if set.
+    Else, None.
+
+    team: if a team is given, the selected user is None unless
+    he is a member of team.
+    """
+    username = request.GET.get('username', None)
+
+    if username is None:
+        return None
+
+    if team is None:
+        selected_user = get_object_or_404(User, username=username)
+    else:
+        try:
+            selected_user = User.objects.filter(
+                Q(team_members__id=team.id) |
+                Q(team_coordinators__id=team.id) |
+                Q(team_reviewers__id=team.id)
+            ).get(username__iexact=username)
+        except User.DoesNotExist:
+            raise Http404
+
+    return selected_user
+
+def _get_selected_user_info(request, team=None):
+    selected_user = _team_members_selected_user(request, team)
+
+    if selected_user and team:
+        membership_type = team.membership_type(selected_user)
+    else:
+        membership_type = None
+
+    return {
+        'selected_user': selected_user,
+        'membership_type': membership_type,
+    }
+
 def _team_members_common_context(request, project_slug, language_code):
     """
     Gathers content common in team_members_{show, edit, whatever}
     """
-    username = request.GET.get('username', None)
     project = get_object_or_404(Project.objects.select_related(), slug=project_slug)
     language = Language.objects.by_code_or_alias_or_404(language_code)
     team = Team.objects.get_or_none(project, language.code)
@@ -314,25 +353,12 @@ def _team_members_common_context(request, project_slug, language_code):
     check = ProjectPermission(request.user)
     can_coordinate = check.coordinate_team(project, language)
 
-    membership_type = None
-    selected_user = None
-
-    if username:
-        try:
-            selected_user = User.objects.get(username__iexact=username)
-        except User.DoesNotExist:
-            pass
-        else:
-            membership_type = team.membership_type(selected_user)
-
     return {
         'project': project,
         'language': language,
         'team': team,
-        'selected_user': selected_user,
         'next_url': request.get_full_path(),
         'project_team_members': True,
-        'membership_type': membership_type,
         'can_coordinate': can_coordinate,
     }
 
@@ -355,6 +381,8 @@ def team_members_index(request, project_slug, language_code):
     Allows everyone to list the members of a team
     """
     context = _team_members_common_context(request, project_slug, language_code)
+    selected_user = _team_members_selected_user(request, team)
+    membership_type = team.membership_type(selected_user)
 
     if context['can_coordinate']:
         args = (project_slug, language_code)
@@ -366,6 +394,8 @@ def team_members_index(request, project_slug, language_code):
         'members': context['team'].members.order_by('username'),
         'action': 'show',
     })
+    context.update(_get_selected_user_info(request, team=team))
+
     template = _team_members_template(request)
     return TemplateResponse(request, template, context)
 
@@ -400,6 +430,7 @@ def team_members_edit(request, project_slug, language_code):
         'user_access_request': user_access_request,
         'action': 'edit',
     })
+    context.update(_get_selected_user_info(request, team=team))
 
     template = _team_members_template(request)
     return TemplateResponse(request, template, context)
