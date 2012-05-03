@@ -418,7 +418,10 @@ def team_members_remove(request, project_slug, language_code, username):
         project__slug__exact=project_slug,
         language__code__iexact=language_code)
 
-    username = '%s (%s)' % (user.username, user.get_full_name())
+    username = '%s' % user.username
+    full_name = user.get_full_name()
+    if full_name:
+        username += ' (%s)' % user.get_full_name()
 
     try:
         team.members.remove(user)
