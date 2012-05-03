@@ -16,7 +16,7 @@ jQuery(document).ready(function() {
     };
   });
 
-  membership_types.unbind("click").live("click", function() {
+  membership_types.on("click", function() {
     clicked_link = $(this);
     membership_type = $(this).attr('data-membership-type');
     /* BE CAREFUL: 'translator' acts as a placeholder for the actual member
