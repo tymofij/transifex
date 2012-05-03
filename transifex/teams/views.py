@@ -381,8 +381,6 @@ def team_members_index(request, project_slug, language_code):
     Allows everyone to list the members of a team
     """
     context = _team_members_common_context(request, project_slug, language_code)
-    selected_user = _team_members_selected_user(request, team)
-    membership_type = team.membership_type(selected_user)
 
     if context['can_coordinate']:
         args = (project_slug, language_code)

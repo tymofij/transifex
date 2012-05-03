@@ -1,11 +1,17 @@
+import mock
+
 from django.core.urlresolvers import reverse
 from django.test.client import Client
 from django.contrib.auth.models import User
 
+import simplejson
+
 from languages.models import Language
 from transifex.teams.models import TeamRequest, TeamAccessRequest
 from transifex.teams.models import Team
+import transifex.teams.views
 from txcommon.tests import base, utils
+
 
 class TestTeams(base.BaseTestCase):
 
@@ -114,46 +120,179 @@ class TestTeams(base.BaseTestCase):
     def test_team_join_request(self):
         """Test joining request to a team"""
         url = reverse('team_join_request', args=[self.project.slug, self.language.code])
-        DATA = {'team_join':'Join this Team'}
-        resp = self.client['registered'].post(url, DATA, follow=True)
+        resp = self.client['registered'].post(url, follow=True)
         self.assertContains(resp, 'You requested to join the', status_code=200)
-
-    def test_team_join_approve(self):
-        '''Test approval of a joining request to a team'''
-        self.test_team_join_request()
-        url = reverse('team_join_approve', args=[self.project.slug, self.language.code, 'registered'])
-        DATA = {'team_join_approve':'Approve'}
-        resp = self.client['team_coordinator'].post(url, DATA, follow=True)
-        self.assertContains(resp, 'You added', status_code=200)
-
-    def test_team_join_deny(self):
-        """Test denial of a joining request to a team"""
-        self.test_team_join_request()
-        url = reverse('team_join_deny', args=[self.project.slug, self.language.code, 'registered'])
-        DATA = {'team_join_deny':'Deny'}
-        resp = self.client['team_coordinator'].post(url, DATA, follow=True)
-        self.assertContains(resp, 'You rejected', status_code=200)
 
     def test_team_join_withdraw(self):
         """Test the withdrawal of a team join request by the user"""
         self.test_team_join_request()
         url = reverse('team_join_withdraw', args=[self.project.slug, self.language.code])
-        DATA = {"team_join_withdraw" : "Withdraw"}
-        resp = self.client['registered'].post(url, DATA, follow=True)
+        resp = self.client['registered'].post(url, follow=True)
         self.assertContains(resp, 'You withdrew your request to join the', status_code=200)
 
     def test_team_leave(self):
         """Test leaving a team"""
-        self.test_team_join_approve()
+        self.team.members.add(self.user['registered'])
         url = reverse('team_leave', args=[self.project.slug, self.language.code])
-        DATA = {'team_leave' : 'Leave'}
-        resp = self.client['registered'].post(url, DATA, follow=True)
+        resp = self.client['registered'].post(url, follow=True)
         self.assertContains(resp, 'You left the', status_code=200)
 
     def test_team_delete(self):
         """Test team delete """
         self.test_create_team()
         url = reverse('team_delete', args=[self.project.slug, self.language_ar.code])
-        DATA = {'team_delete':"Yes, I'm sure!",}
-        resp = self.client['maintainer'].post(url, DATA, follow=True)
+        resp = self.client['maintainer'].post(url, follow=True)
         self.assertContains(resp, 'was deleted', status_code=200)
+
+class TestTeamJoinApprove(base.BaseTestCase):
+
+    def setUp(self):
+        super(TestTeamJoinApprove, self).setUp()
+        self.request = mock.MagicMock(name="request",
+            user=self.user['team_coordinator'], method="POST")
+        self.request.is_ajax.return_value = True
+
+    @mock.patch('transifex.teams.views.HttpResponseRedirect')
+    def test_proceeds_only_if_ajax_post(self, mock_redirect):
+        self.request.is_ajax.return_value = False
+
+        transifex.teams.views.team_join_approve(self.request,
+            project_slug=self.project.slug,
+            language_code=self.language.code,
+            username='registered')
+
+        mock_redirect.assert_called_once_with(reverse("team_detail",
+            args=[self.project.slug, self.language.code]))
+
+    def test_approves_if_everything_ok(self):
+        TeamAccessRequest(team=self.team, user=self.user['registered']).save()
+
+        resp = transifex.teams.views.team_join_approve(self.request,
+                    project_slug=self.project.slug,
+                    language_code=self.language.code,
+                    username='registered')
+
+        self.assertDictEqual({
+            'user_id': self.user['registered'].id,
+            'success': True,
+            'accepted': True
+        }, simplejson.loads(resp.content))
+
+class TestTeamJoinDeny(base.BaseTestCase):
+
+    def setUp(self):
+        super(TestTeamJoinDeny, self).setUp()
+        self.request = mock.MagicMock(name="request",
+            user=self.user['team_coordinator'], method="POST")
+        self.request.is_ajax.return_value = True
+
+    @mock.patch('transifex.teams.views.HttpResponseRedirect')
+    def test_proceeds_only_if_ajax_post(self, mock_redirect):
+        self.request.is_ajax.return_value = False
+
+        transifex.teams.views.team_join_deny(self.request,
+            project_slug=self.project.slug,
+            language_code=self.language.code,
+            username='registered')
+
+        mock_redirect.assert_called_once_with(reverse("team_detail",
+            args=[self.project.slug, self.language.code]))
+
+    def test_denies_if_everything_ok(self):
+        TeamAccessRequest(team=self.team, user=self.user['registered']).save()
+
+        resp = transifex.teams.views.team_join_deny(self.request,
+                    project_slug=self.project.slug,
+                    language_code=self.language.code,
+                    username='registered')
+
+        self.assertDictEqual({
+            'user_id': self.user['registered'].id,
+            'success': True,
+            'accepted': False,
+        }, simplejson.loads(resp.content))
+
+class TestConvertMembershipType(base.BaseTestCase):
+
+    def setUp(self):
+        super(TestConvertMembershipType, self).setUp()
+        self.request = mock.MagicMock(name="request",
+            user=self.user['team_coordinator'], method="POST")
+
+    def test_convert_reviewer_to_coordinator(self):
+        self.team.reviewers.add(self.user['registered'])
+
+        resp = transifex.teams.views.convert_membership_type(self.request,
+            project_slug=self.project.slug,
+            language_code=self.language.code,
+            username='registered',
+            member_type='coordinator')
+
+        self.assertIn(self.user['registered'], self.team.coordinators.all())
+        self.assertNotIn(self.user['registered'], self.team.members.all())
+        self.assertNotIn(self.user['registered'], self.team.reviewers.all())
+        self.assertDictEqual({'success': True}, simplejson.loads(resp.content))
+
+    def test_convert_translator_to_reviewer(self):
+        self.team.reviewers.add(self.user['registered'])
+
+        resp = transifex.teams.views.convert_membership_type(self.request,
+            project_slug=self.project.slug,
+            language_code=self.language.code,
+            username='registered',
+            member_type='reviewer')
+
+        self.assertIn(self.user['registered'], self.team.reviewers.all())
+        self.assertNotIn(self.user['registered'], self.team.coordinators.all())
+        self.assertNotIn(self.user['registered'], self.team.members.all())
+        self.assertDictEqual({'success': True}, simplejson.loads(resp.content))
+
+    def test_member_to_invalid_membership_type(self):
+        self.team.reviewers.add(self.user['registered'])
+
+        resp = transifex.teams.views.convert_membership_type(self.request,
+            project_slug=self.project.slug,
+            language_code=self.language.code,
+            username='registered',
+            member_type='still_being')
+
+        self.assertDictEqual({'success': False}, simplejson.loads(resp.content))
+
+class TestTeamMembersCommonContext(base.BaseTestCase):
+
+    def setUp(self):
+        super(TestTeamMembersCommonContext, self).setUp()
+
+    def test_common_context_without_username(self):
+        request = mock.MagicMock(name="request",
+            user=self.user['registered'], method="GET")
+
+        res = transifex.teams.views._team_members_common_context(request,
+            project_slug=self.project.slug,
+            language_code=self.language.code)
+
+        self.assertDictContainsSubset({
+            'project': self.project,
+            'language': self.language,
+            'team': self.team,
+            'project_team_members': True,
+            'can_coordinate': False,
+        }, res)
+
+    def test_common_context_with_username(self):
+        request = mock.MagicMock(name="request",
+            user=self.user['team_coordinator'],
+            method="GET",
+            GET={'username': 'registered'})
+
+        res = transifex.teams.views._team_members_common_context(request,
+            project_slug=self.project.slug,
+            language_code=self.language.code)
+
+        self.assertDictContainsSubset({
+            'project': self.project,
+            'language': self.language,
+            'team': self.team,
+            'project_team_members': True,
+            'can_coordinate': True,
+        }, res)
