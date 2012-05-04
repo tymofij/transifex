@@ -73,7 +73,7 @@
     {% if can_coordinate %}
         <li class="{% if project_team_members or project_team_form %}selected{% endif %} alpha"><a href="{% url team_members_edit project.slug language.code %}">{% trans "Edit language team" %}</a></li>
     {% else %}
-        <li class="{% if project_team_members or project_team_form %}selected{% endif %} alpha"><a href="{% url team_members_index project.slug language.code %}">{% trans "Language team" %}</a></li>
+        <li class="{% if project_team_members or project_team_form %}selected{% endif %} alpha"><a href="{% url team_members project.slug language.code %}">{% trans "Language team" %}</a></li>
     {% endif %}
   </ul>
 </div>
