@@ -81,6 +81,7 @@ def run_command(command, *args, **kw):
     with_extended_output = kw.pop('with_extended_output', False)
     with_exceptions = kw.pop('with_exceptions', True)
     with_raw_output = kw.pop('with_raw_output', False)
+    log_error = kw.pop('log_error', True)
     env = kw.pop('env', None)
 
     # if command is a string split to a list
@@ -132,7 +133,8 @@ def run_command(command, *args, **kw):
 
     if with_exceptions and status != 0:
         logger.debug('stdout: %s' % stdout_value)
-        logger.error(stderr_value)
+        if log_error:
+            logger.error(stderr_value)
         raise CommandError(command, status, stderr_value, stdout_value)
 
     # Allow access to the command's status code

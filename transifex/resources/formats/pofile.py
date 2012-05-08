@@ -58,7 +58,8 @@ def msgfmt_check(po_contents, ispot=False, with_exceptions=True):
             command = 'msgfmt -o /dev/null -c -'
         status, stdout, stderr = run_command(
             command, _input=po_contents.encode('UTF-8'),
-            with_extended_output=True, with_exceptions=with_exceptions
+            with_extended_output=True, with_exceptions=with_exceptions,
+            log_error=False
         )
         # Not sure why msgfmt sends its output to stderr instead of stdout
         #if 'warning:' in stderr or 'too many errors, aborting' in stderr:
