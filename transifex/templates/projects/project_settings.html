@@ -12,7 +12,7 @@
   {% else %}
   {{block.super}}
   <span>&nbsp;/&nbsp;</span>
-  <span>{% blocktrans with project.name as project_name %}Edit{% endblocktrans %}</span>
+  <span>{% blocktrans with project.name as project_name %}Manage{% endblocktrans %}</span>
   {% endif %}
 {% endblock %}
 
@@ -44,9 +44,10 @@
 {% get_permission "project_perm.maintain" for request.user and project as "is_maintainer" %}
 
 {% if project %}
-    <div class="grid_3 alpha side-menu left-side" style="height:100%;margin-top:50px;">
+    <div class="grid_3 alpha side-menu left-side" style="height:100%;margin-top:30px;">
         {% comment %}Dirty hack. Will use django-guardian in the future.{% endcomment %}
         <ul style="height:100%;">
+		        <li class="head">{% trans "Options" %}</li>        
             {% url project_edit project.slug as url_project_edit %}
             <li class="inner-item {% if site_section.0 == 'projects' and site_section.3 == 'edit' and not site_section.4 %}active{% endif %}"><a href="{{ url_project_edit }}">{% trans "Edit project" %}</a></li>
             {% url project_delete project.slug as url_project_delete %}
@@ -58,6 +59,6 @@
     </div>
 {% endif %}
 
-<div class="grid_9 psettings-content omega">{% block psettings_header %}{% endblock %}{% block project_settings_content %}{% endblock %}</div>
+<div class="grid_8 psettings-content omega">{% block psettings_header %}{% endblock %}{% block project_settings_content %}{% endblock %}</div>
 
 {% endblock %}

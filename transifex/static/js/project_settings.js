@@ -40,8 +40,9 @@ $(document).ready(function (){
 	
   
 	if($("#project-edit-advanced ul.errorlist").length>0){
-		$(".tx-form #project-edit-advanced").slideDown("fast",function(){$(".side-menu").css('height',$(".psettings-content").height());}); }			$(".side-menu").css('height',$(".psettings-content").height()+$("#project-tags").height());
-  
+		$(".tx-form #project-edit-advanced").show();
+		}
+		  
   /* Prevent form submit when enter is pressed in maintainers input field */
   $('input#id_project-maintainers_text').bind('keypress', function(e){
       if (e.which == 13)

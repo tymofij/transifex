@@ -707,4 +707,4 @@ caption     { font-style: italic; font-size: 0.923em; }
 #private_project_sign{background-position: -80px 0;}
 .project-sign p{font-size:11px;font-weight:100;color:#888;text-align:center;margin:0;line-height: 1em;padding-top: 3px;}
 #project-logo-main{margin-top:8px;margin-left:1em;float: right;-webkit-border-radius: 3px;-moz-border-radius: 3px;border-radius: 3px;}
-
+.psettings-content{padding-left: 2em;}
