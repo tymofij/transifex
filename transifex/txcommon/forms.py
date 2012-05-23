@@ -1,4 +1,5 @@
 from django import forms
+from django.utils.translation import ugettext_lazy as _
 
 from contact_form.forms import ContactForm
 from tagging.forms import TagField
@@ -43,3 +44,4 @@ class TxAuthenticationForm(AuthenticationForm):
     def __init__(self, *args, **kwargs):
         super(TxAuthenticationForm, self).__init__(*args, **kwargs)
         self.fields['remember_me'].initial = True
+        self.fields['remember_me'].label = _("Remember me")
