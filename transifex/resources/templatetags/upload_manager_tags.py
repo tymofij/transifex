@@ -6,14 +6,16 @@ from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
 from django.template.defaultfilters import slugify
 from django.forms.util import ErrorList
-from transifex.txcommon.utils import get_url_pattern
+
 from transifex.languages.models import Language
-from transifex.resources.forms import CreateResourceForm, \
-        ResourceTranslationForm, UpdateTranslationForm
-from transifex.resources.models import Resource
+from transifex.projects.signals import project_wordcount_changed
 from transifex.resources.backends import ResourceBackend, FormatsBackend, \
         ResourceBackendError, FormatsBackendError, content_from_uploaded_file, \
         filename_of_uploaded_file
+from transifex.resources.forms import CreateResourceForm, \
+        ResourceTranslationForm, UpdateTranslationForm
+from transifex.resources.models import Resource
+from transifex.txcommon.utils import get_url_pattern
 
 register = template.Library()
 
@@ -61,6 +63,12 @@ def upload_create_resource_form(request, project, prefix='create_form'):
             else:
                 display_form = False
                 resource = Resource.objects.get(slug=slug, project=project)
+
+                # send wordcount-related signal
+                project_wordcount_changed.send(
+                    sender="resource-create form",
+                    project=project, user=request.user, from_api=False
+                )
         else:
             display_form=True
     else:
