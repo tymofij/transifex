@@ -206,6 +206,10 @@ def project_access_control_edit(request, project_slug):
             form.save_m2m()
             handle_stats_on_access_control_edit(project)
             project_outsourced_changed.send(sender=project_hub)
+            signals.project_wordcount_changed.send(
+                sender="project_access_control_edit",
+                project=project, request=request, from_api=False
+            )
 
             if outsourced and not project.outsource:
                 # Drop resources from all-resources release of the hub project
