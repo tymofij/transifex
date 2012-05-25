@@ -22,7 +22,9 @@ from transifex.languages.models import Language
 from notification import models as notification
 from transifex.projects.models import Project
 from transifex.projects.permissions import *
-from transifex.projects.signals import pre_team_request, pre_team_join, ClaNotSignedError
+from transifex.projects.signals import\
+        pre_team_request, pre_team_join, ClaNotSignedError,\
+        project_wordcount_changed
 from transifex.resources.models import RLStats, Resource
 from transifex.teams.forms import TeamSimpleForm, TeamRequestSimpleForm, ProjectsFilterForm
 from transifex.teams.models import Team, TeamAccessRequest, TeamRequest
@@ -118,6 +120,12 @@ def _team_create_update(request, project_slug, language_code=None, extra_context
             # TODO: Use signals
             if not team_id:
                 nt = 'project_team_added'
+
+                # send wordcount-related signal
+                project_wordcount_changed.send(
+                    sender="_team_create_update",
+                    project=project, request=request, from_api=False
+                )
             else:
                 nt = 'project_team_changed'
 
