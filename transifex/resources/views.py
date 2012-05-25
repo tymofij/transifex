@@ -36,6 +36,7 @@ from transifex.resources.handlers import (invalidate_object_templates,
 from transifex.resources.formats.registry import registry
 from transifex.resources.backends import FormatsBackend, FormatsBackendError, \
         content_from_uploaded_file
+from transifex.projects.signals import project_wordcount_changed
 from autofetch.forms import URLInfoForm
 from autofetch.models import URLInfo
 from .tasks import send_notices_for_resource_edited
@@ -602,6 +603,11 @@ def update_translation(request, project_slug, resource_slug, lang_code=None):
                     'status': 400,
             }),
             status=400, content_type='text/plain'
+        )
+    else:
+        project_wordcount_changed.send(
+            sender="add_translation view",
+            project=project, request=request, from_api=False
         )
     return HttpResponse(
         simplejson.dumps({
