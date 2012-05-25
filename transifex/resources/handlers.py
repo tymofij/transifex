@@ -7,9 +7,54 @@ from transifex.projects.signals import post_resource_save, post_resource_delete
 from transifex.txcommon import notifications as txnotification
 from transifex.resources.utils import invalidate_template_cache
 from transifex.teams.models import Team
+from transifex.resources.tasks import send_notices_for_formats
+
 
 RLStats = get_model('resources', 'RLStats')
 Translation = get_model('resources', 'Translation')
+
+
+def update_stats_of_resource(resource, language, user):
+    """
+    Update the statistics for the resource.
+
+    Also, invalidate any caches.
+    """
+    invalidate_stats_cache(resource, language, user=user)
+
+
+def translation_file_updated(resource, language, user):
+    """
+    Perform book-keeping actions, when a translation file has been updated.
+
+    Args:
+        user: The user that caused the update.
+    """
+    update_stats_of_resource(resource, language, user)
+
+    if language == resource.source_language:
+        nt = 'project_resource_changed'
+    else:
+        nt = 'project_resource_translated'
+    context = {
+        'project': resource.project,
+        'resource': resource,
+        'language': language,
+        'sender': user
+    }
+    object_list = [resource.project, resource, language]
+    team = Team.objects.get_or_none(project=resource.project,
+                                    language_code=language.code)
+    if team:
+        object_list.append(team)
+
+    # if we got no user, skip the log
+    if user:
+        action_logging(user, object_list, nt, context=context)
+
+    if settings.ENABLE_NOTICES:
+        send_notices_for_formats.delay(nt, context)
+
 
 def get_project_teams(project):
     if project.outsource:

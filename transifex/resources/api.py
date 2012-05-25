@@ -33,6 +33,7 @@ from transifex.resources.models import Resource, SourceEntity, \
 from transifex.resources.backends import ResourceBackend, FormatsBackend, \
         ResourceBackendError, content_from_uploaded_file, \
         filename_of_uploaded_file
+from transifex.resources.handlers import translation_file_updated
 from transifex.resources.formats import Mode
 from transifex.resources.formats.registry import registry
 from transifex.resources.formats.core import ParseError
@@ -248,12 +249,15 @@ class ResourceHandler(BaseHandler):
             rb = ResourceBackend()
             rb_create =  rb.create(
                 project, slug, name, method, project.source_language, content,
-                extra_data={'filename': filename}
+                request.user, extra_data={'filename': filename}
+            )
+            translation_file_updated(
+                rb_create[0], project.source_language, request.user
             )
             post_resource_save.send(sender=None, instance=Resource.objects.get(
                 slug=slug, project=project),
                     created=True, user=request.user)
-            return rb_create
+            return rb_create[1]
         except ResourceBackendError, e:
             raise BadRequestError(unicode(e))
 
@@ -1193,6 +1197,10 @@ class Translation(object):
             strings_added, strings_updated, strings_deleted = parser.save2db(
                 is_source, user=self.request.user
             )
+            if strings_added + strings_updated + strings_deleted > 0:
+                translation_file_updated(
+                    self.resource, self.language, self.request.user
+                )
         except Exception, e:
             raise BadRequestError("Could not import file: %s" % e)
 

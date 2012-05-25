@@ -42,7 +42,7 @@ class TestResourceBackend(TestBackend):
 
     def test_create(self):
         rb = ResourceBackend()
-        res = rb.create(
+        _, res = rb.create(
             self.project, slug='test1', name='Test', method=self.method,
             source_language=self.source_lang, content=self.content,
             user=self.maintainer, extra_data={'accept_translations': True}

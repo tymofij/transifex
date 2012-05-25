@@ -91,9 +91,9 @@ class ResourceBackend(object):
                 "The content type of the request is not valid."
             ))
         try:
-            return fb.import_source(
+            return (r, fb.import_source(
                 content, filename=extra_data.get('filename')
-            )
+            ))
         except FormatsBackendError, e:
             raise ResourceBackendError(unicode(e))
         except Exception, e:

@@ -239,13 +239,11 @@ class TestViewsInvocations(BaseTestCase):
                         'create_form-source_file': f
                     }
                 )
-                # we need to patch the request.user object
-                with patch.object(request, 'user', create=True) as mock:
-                    mock.return_value = self.user['maintainer']
-                    upload_create_resource_form(request, self.project)
-                    self.assertTrue(import_mock.called)
-                    used_handler = import_mock.call_args[0][0]
-                    self.assertIsInstance(used_handler, klass)
+                setattr(request, 'user', self.user['maintainer'])
+                upload_create_resource_form(request, self.project)
+                self.assertTrue(import_mock.called)
+                used_handler = import_mock.call_args[0][0]
+                self.assertIsInstance(used_handler, klass)
 
         with open(po_filename) as f:
             lang_code = 'en_US'

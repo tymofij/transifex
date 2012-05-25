@@ -27,7 +27,6 @@ from transifex.resources.signals import post_save_translation
 from transifex.resources.formats.resource_collections import StringSet, \
         GenericTranslation, SourceEntityCollection, TranslationCollection
 from transifex.teams.models import Team
-from transifex.resources.tasks import send_notices_for_formats
 
 
 """
@@ -335,37 +334,6 @@ class Handler(object):
         """
         return context or u'None'
 
-    def _handle_update_of_resource(self, user):
-        """Do extra stuff after a source language/translation has been updated.
-
-        Args:
-            user: The user that caused the update.
-        """
-        self._update_stats_of_resource(self.resource, self.language, user)
-
-        if self.language == self.resource.source_language:
-            nt = 'project_resource_changed'
-        else:
-            nt = 'project_resource_translated'
-        context = {
-            'project': self.resource.project,
-            'resource': self.resource,
-            'language': self.language,
-            'sender': user
-        }
-        object_list = [self.resource.project, self.resource, self.language]
-        team = Team.objects.get_or_none(project=self.resource.project,
-                                        language_code=self.language.code)
-        if team:
-            object_list.append(team)
-
-        # if we got no user, skip the log
-        if user:
-            action_logging(user, object_list, nt, context=context)
-
-        if settings.ENABLE_NOTICES:
-            send_notices_for_formats.delay(nt, context)
-
     def _init_source_entity_collection(self, se_list):
         """Initialize the source entities collection.
 
@@ -634,13 +602,6 @@ class Handler(object):
         del new_translations, updated_translations, source_entities, translations
         return strings_added, strings_updated, strings_deleted
 
-    def _update_stats_of_resource(self, resource, language, user):
-        """Update the statistics for the resource.
-
-        Also, invalidate any caches.
-        """
-        invalidate_stats_cache(resource, language, user=user)
-
     def _update_template(self, content):
         """Update the template of the resource.
 
@@ -684,8 +645,6 @@ class Handler(object):
                 is_source=is_source, user=user,
                 overwrite_translations=overwrite_translations
             )
-            if added + updated + deleted > 0:
-                self._handle_update_of_resource(user)
         except Exception, e:
             logger.error("Unhandled exception: %s" % e, exc_info=True)
             transaction.rollback()

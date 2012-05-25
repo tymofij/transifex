@@ -14,7 +14,7 @@ from transifex.resources.models import Resource
 from transifex.resources.backends import ResourceBackend, FormatsBackend, \
         ResourceBackendError, FormatsBackendError, content_from_uploaded_file, \
         filename_of_uploaded_file
-
+from transifex.resources.handlers import translation_file_updated
 register = template.Library()
 
 
@@ -50,7 +50,7 @@ def upload_create_resource_form(request, project, prefix='create_form'):
             rb = ResourceBackend()
             try:
                 with transaction.commit_on_success():
-                    rb.create(
+                    res = rb.create(
                         project, slug, name, method, project.source_language,
                         content, user=request.user,
                         extra_data={'filename': filename}
@@ -61,6 +61,9 @@ def upload_create_resource_form(request, project, prefix='create_form'):
             else:
                 display_form = False
                 resource = Resource.objects.get(slug=slug, project=project)
+            translation_file_updated(
+                res[0], project.source_language, request.user
+            )
         else:
             display_form=True
     else:

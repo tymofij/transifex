@@ -4,6 +4,7 @@ from django.utils.translation import ugettext_lazy as _
 
 from transifex.resources.models import Resource
 from transifex.txcommon.log import logger
+from transifex.resources.handlers import translation_file_updated
 from transifex.resources.formats.registry import registry
 
 import os
@@ -83,6 +84,10 @@ class URLInfo(models.Model):
                 strings_added, strings_updated, strings_deleted = parser.save2db(
                     is_source=True
                 )
+                if strings_added + strings_updated + strings_deleted > 0:
+                    translation_file_updated(
+                        self.resource, language, self.resource.project.owner
+                    )
         except Exception,e:
             logger.error("Error importing source file for resource %s.%s (%s): %s" %
                 ( self.resource.project.slug, self.resource.slug,
