@@ -676,7 +676,7 @@ class Handler(object):
                 exc_info=True
             )
             transaction.rollback()
-            return (0, 0)
+            return (0, 0, 0)
         finally:
             gc.collect()
         try:
@@ -693,7 +693,7 @@ class Handler(object):
         finally:
             gc.collect()
         transaction.commit()
-        return (added, updated)
+        return (added, updated, deleted)
 
     ####################
     # parse methods

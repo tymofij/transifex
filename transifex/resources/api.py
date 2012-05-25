@@ -1190,7 +1190,7 @@ class Translation(object):
         is_source = self.resource.source_language == self.language
         try:
             parser.parse_file(is_source)
-            strings_added, strings_updated = parser.save2db(
+            strings_added, strings_updated, strings_deleted = parser.save2db(
                 is_source, user=self.request.user
             )
         except Exception, e:

@@ -80,7 +80,9 @@ class URLInfo(models.Model):
             parser.parse_file(is_source=True)
             strings_added, strings_updated = 0, 0
             if not fake:
-                strings_added, strings_updated = parser.save2db(is_source=True)
+                strings_added, strings_updated, strings_deleted = parser.save2db(
+                    is_source=True
+                )
         except Exception,e:
             logger.error("Error importing source file for resource %s.%s (%s): %s" %
                 ( self.resource.project.slug, self.resource.slug,
