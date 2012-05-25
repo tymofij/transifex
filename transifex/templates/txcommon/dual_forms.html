@@ -1,0 +1,28 @@
+{% for field in form %}
+    <div class="{{ class_name }} grid_4 alpha">
+        <div id="{{ field.html_name }}" class="tx_form_field">
+
+            {{ field.label }}
+
+            {% if field.field.required %}
+                <span class="required">*</span>
+            {% endif %}
+
+            {% if field.field.help_text %}
+                <span class="field-helptext tipsy_enable"
+                      title="{{ field.help_text }}">?</span>
+            {% endif %}
+
+            {% if field.errors %}
+                <span class="tx-form-error">
+                    {{ field }}
+                </span>
+            {% else %}
+                {{ field }}
+            {% endif %}
+
+            {{ field.errors }}
+        </div>
+    </div>
+{%  endfor %}
+
