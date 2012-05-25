@@ -67,7 +67,7 @@ def upload_create_resource_form(request, project, prefix='create_form'):
                 # send wordcount-related signal
                 project_wordcount_changed.send(
                     sender="resource-create form",
-                    project=project, user=request.user, from_api=False
+                    project=project, request=request, from_api=False
                 )
         else:
             display_form=True

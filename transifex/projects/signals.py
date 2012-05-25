@@ -52,7 +52,7 @@ project_type_check = Signal(providing_args=['instance'])
 project_outsourced_changed = Signal(providing_args=['project'])
 
 # Wordcount changes
-project_wordcount_changed = Signal(providing_args=['project', 'user',
+project_wordcount_changed = Signal(providing_args=['project', 'request',
                                                    'from_api'])
 
 class ClaNotSignedError(Exception): pass
