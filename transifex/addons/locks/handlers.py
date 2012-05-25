@@ -12,7 +12,9 @@ from transifex.resources.utils import invalidate_template_cache
 from transifex.teams.models import Team
 from transifex.txcommon.log import logger
 from txcron.signals import cron_daily, cron_hourly
-from transifex.projects.signals import pre_submit_translation, post_submit_translation
+from transifex.projects.signals import\
+        pre_submit_translation, post_submit_translation,\
+        project_wordcount_changed
 from lotte.signals import lotte_init, lotte_done
 from models import Lock, LockError
 
@@ -48,10 +50,21 @@ def post_handler(sender, request=None, resource=None, language=None,
 def lotte_init_handler(sender, request, resources=None, language=None,
     **kwargs):
     user = request.user
+
+    project_wordcount_changed_sent = False
+
     logger.debug("lock-addon: Started editing in Lotte")
     for resource in resources:
         try:
             lock = Lock.objects.create_update(resource, language, user)
+            # send 'project_wordcount_changed' since a new RLStats object may
+            # have been created here
+            if not project_wordcount_changed_sent:
+                project_wordcount_changed_sent = True
+                project_wordcount_changed.send(
+                    sender="locks-lotte_init_handler",
+                    project=resource.project, request=request, from_api=False
+                )
             logger.debug("lock-addon: Lock acquired/extended: '%s'" % lock)
         except LockError, e:
             logger.debug("lock-addon: %s" % e.message)
