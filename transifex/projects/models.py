@@ -284,7 +284,9 @@ class Project(models.Model):
 
     @property
     def num_languages(self):
-        return Language.objects.filter(rlstats__resource__project=self).distinct().count()
+        project = self.outsource or self
+        return Language.objects.\
+                filter(rlstats__resource__project=project).distinct().count()
 
     @property
     def max_hostable_wordcount(self):
