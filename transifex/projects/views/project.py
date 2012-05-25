@@ -98,6 +98,11 @@ def _project_create_update(request, project_slug=None,
                     txnotification.send_observation_notices_for(project,
                                         signal=nt, extra_context=context)
 
+            signals.project_wordcount_changed.send(
+                sender="_project_create_update",
+                project=project, request=request, from_api=False
+            )
+
             return HttpResponseRedirect(reverse('project_detail',
                                         args=[project.slug]),)
     else:
