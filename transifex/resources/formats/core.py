@@ -615,10 +615,11 @@ class Handler(object):
     @need_resource
     @need_language
     @need_stringset
-    @transaction.commit_manually
     def save2db(self, is_source=False, user=None, overwrite_translations=True):
         """
-        Saves parsed file contents to the database. duh
+        Saves parsed file contents to the database.
+
+        The function should be called within a transaction.
         """
         self._pre_save2db(is_source, user, overwrite_translations)
         try:
@@ -636,8 +637,7 @@ class Handler(object):
                 "Error was %s." % (self.language, self.resource, e),
                 exc_info=True
             )
-            transaction.rollback()
-            return (0, 0, 0)
+            raise FormatError(unicode(e))
         finally:
             gc.collect()
         try:
@@ -647,11 +647,9 @@ class Handler(object):
             )
         except Exception, e:
             logger.error("Unhandled exception: %s" % e, exc_info=True)
-            transaction.rollback()
             raise FormatError(unicode(e))
         finally:
             gc.collect()
-        transaction.commit()
         return (added, updated, deleted)
 
     ####################

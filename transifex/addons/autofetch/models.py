@@ -1,5 +1,6 @@
+from __future__ import with_statement
 import gc
-from django.db import models
+from django.db import models, transaction
 from django.utils.translation import ugettext_lazy as _
 
 from transifex.resources.models import Resource
@@ -81,17 +82,20 @@ class URLInfo(models.Model):
             parser.parse_file(is_source=True)
             strings_added, strings_updated = 0, 0
             if not fake:
-                strings_added, strings_updated, strings_deleted = parser.save2db(
-                    is_source=True
-                )
-                if strings_added + strings_updated + strings_deleted > 0:
+                with transaction.commit_on_success():
+                    added, updated, deleted = parser.save2db(
+                        is_source=True
+                    )
+                if added + updated + deleted > 0:
                     translation_file_updated(
                         self.resource, language, self.resource.project.owner
                     )
         except Exception,e:
-            logger.error("Error importing source file for resource %s.%s (%s): %s" %
-                ( self.resource.project.slug, self.resource.slug,
-                    self.source_file_url, str(e)))
+            msg = "Error importing source file for resource %s.%s (%s): %s"
+            logger.error(msg % (
+                    self.resource.project.slug, self.resource.slug,
+                    self.source_file_url, unicode(e))
+            )
             raise
         finally:
             source_file.close()

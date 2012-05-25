@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+
+from __future__ import with_statement
 import os
 import tempfile
 import urllib
@@ -195,7 +197,6 @@ class ResourceHandler(BaseHandler):
             return False
         return True
 
-    @transaction.commit_on_success
     def _create(self, request, project_slug, data):
         # Check for unavailable fields
         try:
@@ -247,10 +248,11 @@ class ResourceHandler(BaseHandler):
 
         try:
             rb = ResourceBackend()
-            rb_create =  rb.create(
-                project, slug, name, method, project.source_language, content,
-                request.user, extra_data={'filename': filename}
-            )
+            with transaction.commit_on_success():
+                rb_create =  rb.create(
+                    project, slug, name, method, project.source_language, content,
+                    request.user, extra_data={'filename': filename}
+                )
             translation_file_updated(
                 rb_create[0], project.source_language, request.user
             )
@@ -1194,10 +1196,11 @@ class Translation(object):
         is_source = self.resource.source_language == self.language
         try:
             parser.parse_file(is_source)
-            strings_added, strings_updated, strings_deleted = parser.save2db(
-                is_source, user=self.request.user
-            )
-            if strings_added + strings_updated + strings_deleted > 0:
+            with transaction.commit_on_success():
+                added, updated, deleted = parser.save2db(
+                    is_source, user=self.request.user
+                )
+            if added + updated + deleted > 0:
                 translation_file_updated(
                     self.resource, self.language, self.request.user
                 )
