@@ -1047,6 +1047,11 @@ class TranslationHandler(BaseHandler):
             return BAD_REQUEST(unicode(e))
         except AttributeError, e:
             return BAD_REQUEST("The content type of the request is not valid.")
+        else:
+            project_wordcount_changed.send(
+                sender="TranslationHandler::_update",
+                project=resource.project, request=request, from_api=True
+            )
         return t.__class__.to_http_for_create(t, res)
 
     def _delete(self, request, project_slug, resource_slug, lang_code):
