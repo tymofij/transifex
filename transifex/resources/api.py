@@ -25,7 +25,8 @@ from transifex.projects.permissions import *
 from transifex.languages.models import Language
 from transifex.projects.models import Project
 from transifex.projects.permissions.project import ProjectPermission
-from transifex.projects.signals import post_submit_translation, post_resource_save
+from transifex.projects.signals import\
+        post_submit_translation, post_resource_save, project_wordcount_changed
 
 from transifex.resources.decorators import method_decorator
 from transifex.resources.models import Resource, SourceEntity, \
@@ -253,6 +254,10 @@ class ResourceHandler(BaseHandler):
             post_resource_save.send(sender=None, instance=Resource.objects.get(
                 slug=slug, project=project),
                     created=True, user=request.user)
+            project_wordcount_changed.send(
+                sender="ResourceHandler::_create",
+                project=project, request=request, from_api=True
+            )
             return rb_create
         except ResourceBackendError, e:
             raise BadRequestError(unicode(e))
