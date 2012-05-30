@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "projects/project_menu.html" %}
 {% load i18n %}
 {% load txcommontags %}
 {% load permissions %}
@@ -20,12 +20,20 @@ $(document).ready(function(){
 </script>
 {% endblock %}
 
-{% block content_title %}
-  <h2 class="pagetitle">
+{% block header_menu %}{% endblock %}
+
+{% block project_header %}
+{{block.super}}
   {% if resource %}
-    {% blocktrans with resource.name as resource_name %}Edit {{ resource_name }}{% endblocktrans %}
+  <span><a href="{{ resource.project.get_absolute_url }}">{{ resource.project.name }}</a></span>
+  <span>&nbsp;/&nbsp;</span>
+  <span><a href="{% url project_resources resource.project.slug %}">{% blocktrans %}Resources{% endblocktrans %}</a></span>
+  <span>&nbsp;/&nbsp;</span>
+  <span><a href="{{ resource.get_absolute_url }}">{{ resource.name }}</a></span>
+  <span>&nbsp;/&nbsp;</span>
+  <span>{% trans "Edit"%}
   {% endif %}
-  </h2>
+  </span>
 {% endblock %}
 
 {% block extracss %}
