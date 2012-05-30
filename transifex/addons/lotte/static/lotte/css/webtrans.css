@@ -1,4 +1,12 @@
 /* Edit translation files */
+#content_title{width:100%;}
+#content_header_sec{
+  display: none;
+}
+h2.pagetitle{
+  font-size:1.8em;   
+}
+
 #stringset_table {
   width:100%;
 }

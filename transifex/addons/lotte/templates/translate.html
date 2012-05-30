@@ -834,30 +834,37 @@
 {% endblock %}
 
 {% block content_title %}
+<div class="lastchild-emf">
+  <h2 class="pagetitle{% if short_desc %} with_description{% endif %}">
+    <span><a class="smooth-transition" href="{{ project.get_absolute_url }}">{{ project.name }}</a></span>
+    <span>&nbsp;/&nbsp;</span>
+    <span><a class="smooth-transition" href="{% url team_detail project.slug target_language.code %}">Resources&nbsp;({{ target_language.code }})</a></span>
+    <span>&nbsp;/&nbsp;</span>
+    <span><a class="smooth-transition" href="{{ resource.get_absolute_url }}">{{ resource.name }}</a></span>
+    <span>&nbsp;/&nbsp;{{ target_language }}</span>
+  </h2>
+</div>
 
-<h2 class="pagetitle header_idle {% if short_desc %} with_description{% endif %}"><a class="smooth-transition" href="{{ project.get_absolute_url }}">{{ project.name }}</a></h2><h2 class="pagetitle">&nbsp;/&nbsp;</h2><h2 class="header_idle pagetitle with_description"><a class="smooth-transition" href="{{ resource.get_absolute_url }}">{{ resource.name }}</a></h2><h2 class="pagetitle">&nbsp;/&nbsp;{{ target_language }}</h2>
-
-{% endblock %}
-
-{% block body_class %}project_list{% endblock %}
-
-{% block content_header_sec %}
+<div class="nodisplay">
   <div class="lotte-header-link"><a href="#shortcutsdiv" class="i16 nude-button shortcuts fancy tipsy_enable" title="Lotte keyboard shortcuts">{% trans "Shortcuts" %}</a></div>
 
   {% hook "lotte_header_link.html" %}
     
     <div style="display:none;">
-    	<div id="shortcutsdiv" class="facebox-content">
-    		<h4>{% trans "Keyboard shortcuts" %}</h4>
-    		<div><div class="shortcut-label">Alt-l</div> <div class="shortcut-action">{% trans "Moves to the next translations page." %}</div></div>
-    		<div><div class="shortcut-label">Alt-j</div> <div class="shortcut-action">{% trans "Moves to the previous translations page." %}</div></div>
-    		<div><div class="shortcut-label">Alt-i</div> <div class="shortcut-action">{% trans "Moves focus one row upwards." %}</div></div>
-    		<div><div class="shortcut-label">Alt-k</div> <div class="shortcut-action">{% trans "Moves focus one row downwards." %}</div></div>
-    		<div><div class="shortcut-label">Alt-g</div> <div class="shortcut-action">{% trans "Fill in the translation textarea with the content of the source string. (Copy the source string as it is, to the translation area.)" %}</div></div>
-    	</div>
+      <div id="shortcutsdiv" class="facebox-content">
+        <h4>{% trans "Keyboard shortcuts" %}</h4>
+        <div><div class="shortcut-label">Alt-l</div> <div class="shortcut-action">{% trans "Moves to the next translations page." %}</div></div>
+        <div><div class="shortcut-label">Alt-j</div> <div class="shortcut-action">{% trans "Moves to the previous translations page." %}</div></div>
+        <div><div class="shortcut-label">Alt-i</div> <div class="shortcut-action">{% trans "Moves focus one row upwards." %}</div></div>
+        <div><div class="shortcut-label">Alt-k</div> <div class="shortcut-action">{% trans "Moves focus one row downwards." %}</div></div>
+        <div><div class="shortcut-label">Alt-g</div> <div class="shortcut-action">{% trans "Fill in the translation textarea with the content of the source string. (Copy the source string as it is, to the translation area.)" %}</div></div>
+      </div>
     </div>
-    
+</div>
+
 {% endblock %}
+
+{% block body_class %}project_list{% endblock %}
 
 
 {% block content_main %}
