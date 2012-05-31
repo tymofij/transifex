@@ -305,5 +305,5 @@ class ProjectAccessControlForm(forms.ModelForm):
         return cleaned_data
 
     def clean_project_type(self):
-        project_type_check.send(sender=ProjectForm, instance=self)
+        project_type_check.send(sender=ProjectAccessControlForm, instance=self)
         return self.cleaned_data['project_type']
