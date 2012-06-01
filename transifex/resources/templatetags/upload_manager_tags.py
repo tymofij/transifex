@@ -8,7 +8,7 @@ from django.template.defaultfilters import slugify
 from django.forms.util import ErrorList
 
 from transifex.languages.models import Language
-from transifex.projects.signals import project_wordcount_changed
+from transifex.projects import signals
 from transifex.resources.backends import ResourceBackend, FormatsBackend, \
         ResourceBackendError, FormatsBackendError, content_from_uploaded_file, \
         filename_of_uploaded_file
@@ -50,25 +50,38 @@ def upload_create_resource_form(request, project, prefix='create_form'):
             content = content_from_uploaded_file(request.FILES)
             filename = filename_of_uploaded_file(request.FILES)
             rb = ResourceBackend()
-            try:
-                with transaction.commit_on_success():
-                    rb.create(
-                        project, slug, name, method, project.source_language,
-                        content, user=request.user,
-                        extra_data={'filename': filename}
-                    )
-            except ResourceBackendError, e:
-                cr_form._errors['source_file'] = ErrorList([e.message, ])
-                display_form=True
-            else:
-                display_form = False
-                resource = Resource.objects.get(slug=slug, project=project)
 
-                # send wordcount-related signal
-                project_wordcount_changed.send(
-                    sender="resource-create form",
-                    project=project, request=request, from_api=False
-                )
+            # TODO: currently is pseudocode
+            errors = []
+            signals.check_can_modify_wordcount.send(
+                "upload_create_resource_form",
+                project = project, errors=errors
+            )
+
+            if not errors:
+                try:
+                    with transaction.commit_on_success():
+                        rb.create(
+                            project, slug, name, method,
+                            project.source_language, content,
+                            user=request.user,
+                            extra_data={'filename': filename}
+                        )
+                except ResourceBackendError, e:
+                    cr_form._errors['source_file'] = ErrorList([e.message, ])
+                    display_form=True
+                else:
+                    display_form = False
+                    resource = Resource.objects.get(slug=slug, project=project)
+
+                    # send wordcount-related signal
+                    signals.project_wordcount_changed.send(
+                        sender="resource-create form",
+                        project=project, request=request, from_api=False
+                    )
+            else:
+                cr_form._errors['__all__'] = ErrorList(errors)
+                display_form = True
         else:
             display_form=True
     else:
