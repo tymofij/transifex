@@ -54,5 +54,6 @@ project_outsourced_changed = Signal(providing_args=['project'])
 # Wordcount changes
 project_wordcount_changed = Signal(providing_args=['project', 'request',
                                                    'from_api'])
+check_can_modify_wordcount = Signal(providing_args=['project', 'errors'])
 
 class ClaNotSignedError(Exception): pass
