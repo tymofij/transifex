@@ -26,6 +26,7 @@ from transifex.languages.models import Language
 from transifex.projects.models import Project
 from transifex.projects.permissions import *
 from transifex.projects.permissions.project import ProjectPermission
+from transifex.projects.signals import check_can_modify_wordcount
 from transifex.resources.models import Translation, Resource, SourceEntity, \
     ReviewHistory, get_source_language
 from transifex.resources.handlers import invalidate_stats_cache
@@ -115,6 +116,16 @@ def translate(request, project_slug, lang_code, resource_slug=None,
         else:
             return HttpResponseRedirect(reverse('project_detail',
                                                 args=[project_slug]),)
+
+    errors = []
+    check_can_modify_wordcount.send(
+        "lotte::translate view", project=project, errors=errors
+    )
+    if errors:
+        messages.error(request, ", ".join(errors), fail_silently=True)
+        return HttpResponseRedirect(
+            reverse('project_detail', kwargs={'project_slug': project_slug})
+        )
 
     total_strings = SourceEntity.objects.filter(
         resource__in = resources).count()

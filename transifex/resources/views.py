@@ -596,8 +596,7 @@ def update_translation(request, project_slug, resource_slug, lang_code=None):
 
     errors = []
     signals.check_can_modify_wordcount.send(
-        "upload_create_resource_form",
-        project = project, errors=errors
+        "upload_create_resource_form", project=project, errors=errors
     )
 
     if not errors:
