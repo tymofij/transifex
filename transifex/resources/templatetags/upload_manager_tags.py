@@ -51,7 +51,6 @@ def upload_create_resource_form(request, project, prefix='create_form'):
             filename = filename_of_uploaded_file(request.FILES)
             rb = ResourceBackend()
 
-            # TODO: currently is pseudocode
             errors = []
             signals.check_can_modify_wordcount.send(
                 "upload_create_resource_form",

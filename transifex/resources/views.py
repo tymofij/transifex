@@ -24,7 +24,7 @@ from transifex.languages.models import Language
 from transifex.projects.models import Project
 from transifex.projects.permissions import *
 from transifex.projects.permissions.project import ProjectPermission
-from transifex.projects.signals import post_resource_delete
+from transifex.projects import signals
 from transifex.teams.models import Team
 from transifex.txcommon.decorators import one_perm_required_or_403
 from transifex.txcommon.log import logger
@@ -36,7 +36,6 @@ from transifex.resources.handlers import (invalidate_object_templates,
 from transifex.resources.formats.registry import registry
 from transifex.resources.backends import FormatsBackend, FormatsBackendError, \
         content_from_uploaded_file
-from transifex.projects.signals import project_wordcount_changed
 from autofetch.forms import URLInfoForm
 from autofetch.models import URLInfo
 from .tasks import send_notices_for_resource_edited
@@ -97,7 +96,7 @@ def resource_delete(request, project_slug, resource_slug):
         resource.delete()
 
         # Signal for logging
-        post_resource_delete.send(sender=None, instance=resource_,
+        signals.post_resource_delete.send(sender=None, instance=resource_,
             user=request.user)
 
         messages.success(request,
@@ -594,28 +593,40 @@ def update_translation(request, project_slug, resource_slug, lang_code=None):
         )
 
     content = content_from_uploaded_file(request.FILES)
-    try:
-        _save_translation(resource, target_language, request.user, content)
-    except FormatsBackendError, e:
+
+    errors = []
+    signals.check_can_modify_wordcount.send(
+        "upload_create_resource_form",
+        project = project, errors=errors
+    )
+
+    if not errors:
+        try:
+            _save_translation(resource, target_language, request.user, content)
+        except FormatsBackendError, e:
+            return HttpResponse(
+                simplejson.dumps({
+                        'msg': unicode(e),
+                        'status': 400,
+                }),
+                status=400, content_type='text/plain'
+            )
+        else:
+            signals.project_wordcount_changed.send(
+                sender="add_translation view",
+                project=project, request=request, from_api=False
+            )
         return HttpResponse(
             simplejson.dumps({
-                    'msg': unicode(e),
-                    'status': 400,
+                    'msg': "",
+                    'status': 200,
             }),
-            status=400, content_type='text/plain'
+            status=200, content_type='text/plain'
         )
     else:
-        project_wordcount_changed.send(
-            sender="add_translation view",
-            project=project, request=request, from_api=False
-        )
-    return HttpResponse(
-        simplejson.dumps({
-                'msg': "",
-                'status': 200,
-        }),
-        status=200, content_type='text/plain'
-    )
+        return HttpResponse(simplejson.dumps({'msg': ", ".join(errors),
+                                              'status': 403, }),
+                                             mimetype="application/json")
 
 
 @transaction.commit_on_success
