@@ -691,6 +691,16 @@ class SingleTranslationHandler(TranslationBaseHandler):
             project = Project.objects.get(slug=project_slug)
         except Project.DoesNotExist, e:
             return rc.NOT_FOUND
+
+        # check if action is allowed
+        errors = []
+        signals.check_can_modify_wordcount.send(
+            "translation_objects API::read",
+            project=project, errors=errors
+        )
+        if errors:
+            raise BadRequestError(", ".join(errors))
+
         try:
             resource = Resource.objects.get(slug=resource_slug,
                     project=project)
@@ -745,6 +755,16 @@ class SingleTranslationHandler(TranslationBaseHandler):
             project = Project.objects.get(slug=project_slug)
         except Project.DoesNotExist, e:
             return rc.NOT_FOUND
+
+        # check if action is allowed
+        errors = []
+        signals.check_can_modify_wordcount.send(
+            "translation_objects API::update",
+            project=project, errors=errors
+        )
+        if errors:
+            raise BadRequestError(", ".join(errors))
+
         try:
             resource = Resource.objects.get(slug=resource_slug,
                     project=project)
