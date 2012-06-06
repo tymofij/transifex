@@ -23,10 +23,9 @@ from transifex.txcommon.exceptions import FileCheckError
 from transifex.txcommon.utils import paginate
 from transifex.projects.permissions import *
 from transifex.languages.models import Language
+from transifex.projects import signals
 from transifex.projects.models import Project
 from transifex.projects.permissions.project import ProjectPermission
-from transifex.projects.signals import\
-        post_submit_translation, post_resource_save, project_wordcount_changed
 
 from transifex.resources.decorators import method_decorator
 from transifex.resources.models import Resource, SourceEntity, \
@@ -217,6 +216,15 @@ class ResourceHandler(BaseHandler):
             logger.warning(unicode(e), exc_info=True)
             raise NotFoundError(unicode(e))
 
+        # check if action is allowed
+        errors = []
+        signals.check_can_modify_wordcount.send(
+            "resources_api::create",
+            project=project, errors=errors
+        )
+        if errors:
+            raise BadRequestError(", ".join(errors))
+
         # In multipart/form-encode request variables have lists
         # as values. So we use __getitem__ isntead of pop, which returns
         # the last value
@@ -251,10 +259,11 @@ class ResourceHandler(BaseHandler):
                 project, slug, name, method, project.source_language, content,
                 extra_data={'filename': filename}
             )
-            post_resource_save.send(sender=None, instance=Resource.objects.get(
-                slug=slug, project=project),
-                    created=True, user=request.user)
-            project_wordcount_changed.send(
+            signals.post_resource_save.send(
+                sender=None, created=True, user=request.user,
+                instance=Resource.objects.get(slug=slug, project=project)
+            )
+            signals.project_wordcount_changed.send(
                 sender="ResourceHandler::_create",
                 project=project, request=request, from_api=True
             )
@@ -967,6 +976,15 @@ class TranslationHandler(BaseHandler):
         except Resource.DoesNotExist:
             return rc.NOT_FOUND
 
+        # check if action is allowed
+        errors = []
+        signals.check_can_modify_wordcount.send(
+            "resources_api::create",
+            project=r.project, errors=errors
+        )
+        if errors:
+            raise BadRequestError(", ".join(errors))
+
         if lang_code == "source":
             language = r.source_language
         else:
@@ -1048,7 +1066,7 @@ class TranslationHandler(BaseHandler):
         except AttributeError, e:
             return BAD_REQUEST("The content type of the request is not valid.")
         else:
-            project_wordcount_changed.send(
+            signals.project_wordcount_changed.send(
                 sender="TranslationHandler::_update",
                 project=resource.project, request=request, from_api=True
             )
@@ -1226,7 +1244,7 @@ class Translation(object):
             modified = True
         else:
             modified=False
-        post_submit_translation.send(
+        signals.post_submit_translation.send(
             None, request=self.request, resource=self.resource,
             language=self.language, modified=modified
         )
