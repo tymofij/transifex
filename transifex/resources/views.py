@@ -428,6 +428,18 @@ def get_translation_file(request, project_slug, resource_slug, lang_code,
 
     language = get_object_or_404(Language, code=lang_code)
 
+    # Check whether this action is allowed
+    errors = []
+    signals.check_can_modify_wordcount.send(
+        "resources::get_translation_file view",
+        project=resource.project, errors=errors
+    )
+    if errors:
+        messages.error(request, ", ".join(errors))
+        return HttpResponseRedirect(
+            reverse("project_detail", kwargs={'project_slug': project_slug})
+        )
+
     try:
         fb = FormatsBackend(resource, language)
         template = fb.compile_translation(**kwargs)
