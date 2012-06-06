@@ -274,6 +274,18 @@ def view_strings(request, project_slug, lang_code, resource_slug=None,
         slug = resource_slug,
         project__slug = project_slug
     )
+
+    # check whether this action is allowed
+    errors = []
+    check_can_modify_wordcount.send(
+        "lotte::view_strings_online", project=resource.project, errors=errors
+    )
+    if errors:
+        messages.error(request, ", ".join(errors), fail_silently=True)
+        return HttpResponseRedirect(
+            reverse('project_detail', kwargs={'project_slug': project_slug})
+        )
+
     try:
         target_language = Language.objects.by_code_or_alias(lang_code)
     except Language.DoesNotExist:
