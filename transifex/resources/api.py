@@ -537,6 +537,16 @@ class TranslationBaseHandler(BaseHandler):
             project = Project.objects.get(slug=project_slug)
         except Project.DoesNotExist, e:
             return rc.NOT_FOUND
+
+        # check if action is allowed
+        errors = []
+        signals.check_can_modify_wordcount.send(
+            "resources_api::create",
+            project=project, errors=errors
+        )
+        if errors:
+            return BAD_REQUEST(", ".join(errors))
+
         try:
             resource = Resource.objects.get(slug=resource_slug,
                     project=project)
