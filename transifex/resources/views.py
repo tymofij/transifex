@@ -480,6 +480,18 @@ def get_pot_file(request, project_slug, resource_slug):
     resource = get_object_or_404(
         Resource, project__slug=project_slug, slug=resource_slug
     )
+
+    # check if this action is allowed
+    errors = []
+    signals.check_can_modify_wordcount.send(
+        "upload_create_resource_form", project=resource.project, errors=errors
+    )
+    if errors:
+        messages.error(request, ", ".join(errors))
+        return HttpResponseRedirect(
+            reverse("project_detail", kwargs={'project_slug': project_slug})
+        )
+
     try:
         fb = FormatsBackend(resource, None)
         template = fb.compile_translation()
