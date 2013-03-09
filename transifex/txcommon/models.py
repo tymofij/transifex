@@ -53,6 +53,11 @@ class Profile(UserenaBaseProfile):
     class Meta:
         db_table = 'txcommon_userenaprofile'
 
+    def language_codes(self):
+        ''' returns list of languages spoken by that user
+        '''
+        return self.languages.all().values_list('code', flat=True)
+
 try:
     tagging.register(Profile, tag_descriptor_attr='tagsobj')
 except tagging.AlreadyRegistered, e:
