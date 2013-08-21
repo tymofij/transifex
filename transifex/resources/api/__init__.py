@@ -382,7 +382,11 @@ class StatsHandler(BaseHandler):
 
         stats = RLStats.objects.by_resource(resource)
         if language is not None:
-            stat = stats.by_language(language)[0]
+            stat = stats.by_language(language)
+            if stat:
+                stat = stat[0]
+            else:
+                return rc.NOT_FOUND
             return {
                 'completed': '%s%%' % stat.translated_perc,
                 'translated_entities': stat.translated,
