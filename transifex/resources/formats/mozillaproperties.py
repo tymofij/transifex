@@ -49,7 +49,9 @@ class MozillaPropertiesHandler(FillEmptyCompilerFactory, PropertiesHandler):
         )
         # double the slashes, except when they start unicode sequence
         # or other control character
-        return re.sub(r'\\([^uUnrt$])', r'\\\\\1', s)
+        s = re.sub(r'\\([^uUnrt])', r'\\\\\1', s)
+        # double slashes at the end of the line too
+        return re.sub(r'\\$', r'\\\\', s)
 
     def _unescape(self, s):
         """ Outputting the strings to the screen
