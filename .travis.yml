@@ -6,6 +6,6 @@ install:
   - pip install coveralls
   - pip install -r requirements.txt
 script:
-  - cd transifex && coverage run ./manage.py test actionlog projects releases resources teams autofetch charts cla datastores gtranslate locks lotte priorities suggestions timeline txapps watches webhooks widgets --settings=settings_test
+  - cd transifex && make test_coverage
 after_success:
   - coveralls
