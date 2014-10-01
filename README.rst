@@ -3,6 +3,9 @@
  Transifex: Localization, Evolved.
 ===================================
 
+.. image:: https://travis-ci.org/tymofij/transifex.svg?branch=master
+    :target: https://travis-ci.org/tymofij/transifex
+
 "Translation workflow and crowdsourcing for agile teams and smart translators."
 
 https://www.transifex.com/
