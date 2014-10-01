@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import os
+import os, sys
 from copy import copy
 from django.core import management, mail
 from django.core.urlresolvers import reverse
@@ -7,7 +7,7 @@ from django.conf import settings
 from django.utils import unittest
 from django.db.models.loading import get_model
 from django.db import (connections, DEFAULT_DB_ALIAS,
-        transaction, IntegrityError)
+        transaction, IntegrityError, DatabaseError)
 from django.test import TestCase, TransactionTestCase
 from django.test.testcases import (connections_support_transactions,
         disable_transaction_methods, restore_transaction_methods)
@@ -48,6 +48,30 @@ USER_ROLES = [
     'team_member',
     'reviewer']
 PASSWORD = '123412341234'
+
+
+if 'test' in sys.argv:
+    # monkeypatch get_current() to avoid import errors when tables are not yet created
+    from django.contrib.sites.models import Site
+    try:
+        Site.objects.get_current()
+    except DatabaseError:
+        def dummy_get_current():
+            return Site(domain='localhost', name='transifex')
+        Site.objects.get_current = dummy_get_current
+
+    # and patch language_choice_list() for the same reason
+    from transifex.languages import models as lang_models
+    try:
+        lang_models.language_choice_list()
+    except DatabaseError:
+        def dummy_language_choice_list():
+                return [
+                    ('af', 'Africaans'), ('ar', 'Arabic'), ('el', 'Greek'),
+                    ('fi', 'Finnish'), ('pt_BR', 'Portuguese (Brazil)'),
+                    ('en_US', 'English (United States)'), ('hi_IN', 'Hindi (India)')
+                ]
+        lang_models.language_choice_list = dummy_language_choice_list
 
 
 def deactivate_caching_middleware():
@@ -419,7 +443,7 @@ class TransactionBaseTestCase(SampleData, TransactionTestCase,):
 
         # Useful for writing tests: Enter ipython anywhere w/ ``self.ipython()``
         try:
-            from IPython.frontend.terminal.embed import InteractiveShellEmbed as shell
+            from IPython.terminal.embed import InteractiveShellEmbed as shell
             self.ipython = shell()
         except ImportError:
             pass
@@ -507,7 +531,7 @@ class BaseTestCase(Languages, NoticeTypes, Translations, TestCase):
 
         # Useful for writing tests: Enter ipython anywhere w/ ``self.ipython()``
         try:
-            from IPython.frontend.terminal.embed import InteractiveShellEmbed as shell
+            from IPython.terminal.embed import InteractiveShellEmbed as shell
             self.ipython = shell()
         except ImportError:
             pass

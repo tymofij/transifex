@@ -1,43 +1,40 @@
-celery
-chardet
-contact_form>=0.3
-Django==1.3.1
-django-addons>=0.6.6
+celery==3.0.11
+chardet==2.1.1
+django==1.3.7
+django-addons==0.6.6
 django-ajax-selects==1.1.4
-django-authority
-django-celery
-django-filter
-django-kombu
-django-picklefield
-django-piston==0.2.3
-django-social-auth
-django-sorting>=0.1
+django-authority==0.4
+django-celery==3.0.11
+django-filter==0.5.3
+django-kombu==0.9.4
+django-picklefield==0.2.1
+django-social-auth==0.7.8
 django-tagging-autocomplete==0.3.1
-django-threadedcomments>=0.9
-django-userena
-hiredis>=0.1.0
-httplib2
-markdown
-PIL>=1.1.7
+django-userena==1.1.2
+easy-thumbnails==1.1
+hiredis==0.1.1
+httplib2==0.7.6
+markdown==2.2.1
+mock
 polib==0.6.3
 pygooglechart
-pysolr
-redis>=2.4.10
-requests
-South==0.7.3
-userprofile
+pysolr==2.1.0
+redis==2.7.1
+requests==0.14.2
+south==0.7.3
 BeautifulSoup==3.2.0
 django-staticfiles==1.2.1
 
--f http://trac.transifex.org/files/deps/contact_form-0.3.tar.gz
--f http://trac.transifex.org/files/deps/django-piston-0.2.3.tar.gz
--f http://trac.transifex.org/files/deps/django-sorting-0.1.tar.gz
--f http://trac.transifex.org/files/deps/django-threadedcomments-0.9.tar.gz
--f http://trac.transifex.org/files/deps/userprofile-0.7-r422-correct-validation.tar.gz
--e git+git://github.com/jezdez/django_compressor.git@ee16af610d677a0a9b63602da6558f601f66287c#egg=django_compressor
--e git+git://github.com/toastdriven/django-haystack.git@3289ab8bb410321a94608a13e2e527ddbd8f1a7e#egg=django-haystack
--e git+git://github.com/mpessas/django-bulk.git#egg=django-bulk
--e git+git://github.com/mpessas/python-Levenshtein.git#egg=Levenshtein
--e git+git://github.com/mpessas/django-tagging.git#egg=django-tagging
--e git+git://github.com/jkal/django-notification.git#egg=django-notification
--e git+git://github.com/jkal/django-pagination.git#egg=django-pagination
+http://trac.transifex.org/files/deps/contact_form-0.3.tar.gz
+http://trac.transifex.org/files/deps/django-piston-0.2.3.tar.gz
+http://trac.transifex.org/files/deps/django-sorting-0.1.tar.gz
+http://trac.transifex.org/files/deps/django-threadedcomments-0.9.tar.gz
+http://trac.transifex.org/files/deps/userprofile-0.7-r422-correct-validation.tar.gz
+
+-e git://github.com/jezdez/django_compressor.git@ee16af610d677a0a9b63602da6558f601f66287c#egg=django_compressor-dev
+-e git://github.com/jkal/django-notification.git@83b83551df5e4b5c83b20f4db9cc0efdcff40a30#egg=django_notification-dev
+-e git://github.com/jkal/django-pagination.git@15515fcc1fa1afc150a3a6565efadcd3700f83e7#egg=django_pagination-dev
+-e git://github.com/mpessas/django-bulk.git@e3d606186d64d854857060d88e57bca9948d61f1#egg=django_bulk-dev
+-e git://github.com/mpessas/django-tagging.git@a19a54bad767c29595a3e0c39e6331cf91f36bd7#egg=django_tagging-dev
+-e git://github.com/mpessas/python-Levenshtein.git@71c1ce1b430435c6265c0f558d4b7aba49100d19#egg=python_Levenshtein-dev
+-e git://github.com/toastdriven/django-haystack.git@3289ab8bb410321a94608a13e2e527ddbd8f1a7e#egg=django_haystack-dev
