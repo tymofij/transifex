@@ -2,5 +2,11 @@ language: python
 before_install:
   - sudo apt-get install redis-server
   - sudo service redis-server start
+install:
+  - pip install coveralls
 script:
-  - cd transifex && make test
+  - cd transifex && coverage run ./manage.py test actionlog projects releases resources teams \
+    autofetch charts cla datastores gtranslate locks lotte priorities \
+    suggestions timeline txapps watches webhooks widgets --settings=settings_test
+after_success:
+  - coveralls
