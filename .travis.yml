@@ -6,8 +6,6 @@ install:
   - pip install coveralls
   - pip install -r requirements.txt
 script:
-  - cd transifex && ./manage.py test actionlog projects releases resources teams \
-    autofetch charts cla datastores gtranslate locks lotte priorities \
-    suggestions timeline txapps watches webhooks widgets --settings=settings_test
+  - cd transifex && ./manage.py test actionlog projects releases resources teams autofetch charts cla datastores gtranslate locks lotte priorities suggestions timeline txapps watches webhooks widgets --settings=settings_test
 after_success:
   - coveralls
