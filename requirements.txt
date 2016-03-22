@@ -6,6 +6,7 @@ django-ajax-selects==1.1.4
 django-authority==0.4
 django-celery==3.0.11
 django-filter==0.5.3
+django-guardian=1.0.4
 django-kombu==0.9.4
 django-picklefield==0.2.1
 django-social-auth==0.7.8
@@ -26,11 +27,11 @@ south==0.7.3
 BeautifulSoup==3.2.0
 django-staticfiles==1.2.1
 
-http://trac.transifex.org/files/deps/contact_form-0.3.tar.gz
-http://trac.transifex.org/files/deps/django-piston-0.2.3.tar.gz
-http://trac.transifex.org/files/deps/django-sorting-0.1.tar.gz
-http://trac.transifex.org/files/deps/django-threadedcomments-0.9.tar.gz
-http://trac.transifex.org/files/deps/userprofile-0.7-r422-correct-validation.tar.gz
+./vendor/contact_form-0.3.tar.gz
+./vendor/django-piston-0.2.3.tar.gz
+./vendor/django-sorting-0.1.tar.gz
+./vendor/django-threadedcomments-0.9.tar.gz
+./vendor/userprofile-0.7-r422-correct-validation.tar.gz
 
 -e git://github.com/jezdez/django_compressor.git@ee16af610d677a0a9b63602da6558f601f66287c#egg=django_compressor-dev
 -e git://github.com/jkal/django-notification.git@83b83551df5e4b5c83b20f4db9cc0efdcff40a30#egg=django_notification-dev
