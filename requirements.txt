@@ -2,6 +2,7 @@ celery==3.0.11
 chardet==2.1.1
 django-addons==0.6.6
 django-ajax-selects==1.1.4
+django-appconf==0.5
 django-authority==0.4
 django-celery==3.0.11
 django-filter==0.5.3
